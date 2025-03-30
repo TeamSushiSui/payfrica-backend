@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  walletAddress String @id @map("_id")
+  username      String
+}
+
+model P2PDepositOrder {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId // Auto-generated unique ID
+  wallet      String   // User's wallet address
+  amount      Float    // Deposit amount
+  agentId     String   // Agent handling the deposit
+  status      String   @default("pending") // "pending" | "completed" | "failed"
+  createdAt   DateTime @default(now()) // Order creation time
+  completedAt DateTime? // Null until order is completed
+  accountNumber String
+  bank          String
+  name          String
+}
+
+model Agent {
+  agentId      String @id @map("_id")  // Using MongoDB's default `_id` as agentId
+  accountNumber String
+  bank         String
+  accountName  String
+}
