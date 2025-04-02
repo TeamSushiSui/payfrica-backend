@@ -14,7 +14,12 @@ export class UsersController {
         return this.usersService.findAll();
     }
     @Get(':walletAddress')
-    async getUser(@Param('walletAddress') walletAddress: string) {
+    async getUserByWalletAddress(@Param('walletAddress') walletAddress: string) {
         return this.usersService.findUserByWallet(walletAddress);
+    }
+
+    @Get(':username')
+    async getUserByName(@Param('username') username: string) {
+        return this.usersService.findUserByName(username);
     }
 }
