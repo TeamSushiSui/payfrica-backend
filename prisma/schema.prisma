@@ -13,27 +13,107 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// model User {
+//   walletAddress String @id @map("_id")
+//   username      String
+// }
+
 model User {
-  walletAddress String @id @map("_id")
-  username      String
+  id              String   @id  @map("_id")
+  address         String  @unique
+  username        String?
+  accountDetails  AccountDetails?
+  withdrawals     Json[]   // History of withdrawals
+  deposits        Json[]   // History of deposits
+  totalWithdrawn  Float    @default(0)
+  totalDeposited  Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
-model P2PDepositOrder {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId // Auto-generated unique ID
-  wallet      String   // User's wallet address
-  amount      Float    // Deposit amount
-  agentId     String   // Agent handling the deposit
-  status      String   @default("pending") // "pending" | "completed" | "failed"
-  createdAt   DateTime @default(now()) // Order creation time
-  completedAt DateTime? // Null until order is completed
-  accountNumber String
-  bank          String
-  name          String
+model AccountDetails {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  accountNumber  String
+  name           String
+  bank           String
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String   @unique
+}
+
+
+enum WithdrawStatus {
+  PENDING
+  COMPLETED
+}
+
+enum DepositStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
 }
 
 model Agent {
-  agentId      String @id @map("_id")  // Using MongoDB's default `_id` as agentId
-  accountNumber String
-  bank         String
-  accountName  String
+  id                           String          @id @default(auto()) @map("_id") @db.ObjectId
+  addr                         String          // Agent's blockchain address
+  balance                      Float           // Current balance
+  coinType                     String          // Type of coin this agent handles
+  accountNumber                String
+  bank                         String
+  name                         String
+  pendingWithdrawals           WithdrawRequest[] @relation("PendingWithdrawals")
+  successfulWithdrawals        WithdrawRequest[] @relation("SuccessfulWithdrawals")
+  totalSuccessfulWithdrawals   Int             @default(0)
+  totalPendingWithdrawals      Int             @default(0)
+  totalSuccessfulWithdrawalsAmount Float       @default(0)
+  totalPendingWithdrawalsAmount Float          @default(0)
+  pendingDeposits              DepositRequest[] @relation("PendingDeposits")
+  successfulDeposits           DepositRequest[] @relation("SuccessfulDeposits")
+  totalSuccessfulDeposits      Int             @default(0)
+  totalPendingDeposits         Int             @default(0)
+  totalSuccessfulDepositsAmount Float          @default(0)
+  totalPendingDepositsAmount   Float           @default(0)
+  unsuccessfulDeposits         DepositRequest[] @relation("UnsuccessfulDeposits")
+  totalUnsuccessfulDeposits    Int             @default(0)
+  maxWithdrawLimit             Float           @default(0)
+  maxDepositLimit              Float           @default(0)
+  minWithdrawLimit             Float           @default(0)
+  minDepositLimit              Float           @default(0)
+  createdAt                    DateTime        @default(now())
+  updatedAt                    DateTime        @updatedAt
+}
+
+model WithdrawRequest {
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  requestId   String        // Original blockchain request ID if available
+  amount      Float
+  user        String         // User's blockchain address
+  agentId     String?
+  agent       Agent?         @relation("PendingWithdrawals", fields: [agentId], references: [id], onDelete: SetNull)
+  successfulAgent Agent?     @relation("SuccessfulWithdrawals", fields: [successfulAgentId], references: [id], onDelete: SetNull)
+  successfulAgentId String?
+  coinType    String
+  status      WithdrawStatus @default(PENDING)
+  requestTime DateTime       @default(now())
+  statusTime  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model DepositRequest {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  requestId   String?       // Original blockchain request ID if available
+  amount      Float
+  user        String        // User's blockchain address
+  agentId     String?
+  agent       Agent?        @relation("PendingDeposits", fields: [agentId], references: [id], onDelete: SetNull)
+  successfulAgent Agent?    @relation("SuccessfulDeposits", fields: [successfulAgentId], references: [id], onDelete: SetNull)
+  successfulAgentId String?
+  unsuccessfulAgent Agent?  @relation("UnsuccessfulDeposits", fields: [unsuccessfulAgentId], references: [id], onDelete: SetNull)
+  unsuccessfulAgentId String?
+  coinType    String
+  status      DepositStatus @default(PENDING)
+  requestTime DateTime      @default(now())
+  statusTime  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
