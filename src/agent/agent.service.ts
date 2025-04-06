@@ -1,8 +1,9 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../src/prisma/prisma.service';
 import { Agent } from '@prisma/client';
 import { WithdrawStatus, DepositStatus } from '@prisma/client';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../../src/users/users.service';
 
 @Injectable()
 export class AgentService {
@@ -158,7 +159,7 @@ async getBestWithdrawalAgent(coinType: string, amount: number): Promise<{ id: st
     if (!best_agent) {
       throw new Error('Best Agent not found');
     }
-    let agentId = best_agent.id;
+    const agentId = best_agent.id;
     const agent = await this.prisma.prismaClient.agent.findUnique({ 
       where: { id: agentId } 
     });
@@ -223,6 +224,9 @@ async getBestWithdrawalAgent(coinType: string, amount: number): Promise<{ id: st
       throw new Error('Agent not found');
     }
 
+    if (agent.balance < withdrawRequest.amount) {
+      throw new Error('Insufficient agent balance')
+    }
     // Update the status and move the request to successful withdrawals
     const updatedRequest = await this.prisma.prismaClient.withdrawRequest.update({
       where: { id },
