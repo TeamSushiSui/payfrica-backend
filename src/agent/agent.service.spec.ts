@@ -951,21 +951,21 @@ describe('AgentService', () => {
       });
     });
 
-    // describe('General Error Handling', () => {
-    //   it('should throw an error if the database connection fails', async () => {
-    //     jest.spyOn(prismaService.prismaClient.agent, 'findMany').mockRejectedValue(new Error('Database connection failed'));
+    describe('General Error Handling', () => {
+      it('should throw an error if the database connection fails', async () => {
+        jest.spyOn(prismaService.prismaClient.agent, 'findMany').mockRejectedValue(new Error('Database connection failed'));
   
-    //     await expect(service.getAllAgents()).rejects.toThrow('Database connection failed');
-    //     expect(prismaService.prismaClient.agent.findMany).toHaveBeenCalled();
-    //   });
+        await expect(service.getAllAgents()).rejects.toThrow('Database connection failed');
+        expect(prismaService.prismaClient.agent.findMany).toHaveBeenCalled();
+      });
   
-    //   it('should throw an error if an unexpected exception occurs', async () => {
-    //     jest.spyOn(service, 'getAllAgents').mockImplementation(() => {
-    //       throw new Error('Unexpected error');
-    //     });
+      it('should throw an error if an unexpected exception occurs', async () => {
+        jest.spyOn(service, 'getAllAgents').mockRejectedValue(() => {
+          throw new Error('Unexpected error');
+        });
   
-    //     await expect(service.getAllAgents()).rejects.toThrow('Unexpected error');
-    //   });
-    // });
+        await expect(service.getAllAgents()).rejects.toThrow('Unexpected error');
+      });
+    });
   })
 });
