@@ -1,44 +1,52 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Put } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import { Controller, Get, Post, Body, Param, Put, ValidationPipe, NotFoundException } from '@nestjs/common';
 import { AgentService } from './agent.service';
-// import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateAgentDto } from './dto/create-agent.dto';
 
 @Controller('agent')
 export class AgentController {
-  constructor(private readonly agentService: AgentService) {}
+  constructor(private readonly agentService: AgentService) { }
 
   @Post()
-  create(@Body() createAgentDto: {
-    addr: string;
-    coinType: string;
-    minWithdrawLimit?: number;
-    maxWithdrawLimit?: number;
-    minDepositLimit?: number;
-    maxDepositLimit?: number;
-    accountNumber: string;
-    bank: string;
-    name: string
-  }) {
+  create(@Body(new ValidationPipe()) createAgentDto: CreateAgentDto) {
     return this.agentService.createAgent(createAgentDto);
   }
 
   @Get()
-  findAll() {
-    return this.agentService.getAllAgents();
+  async findAll() {
+    const result = await this.agentService.getAllAgents();
+    if (!result || result.length === 0) {
+      throw new NotFoundException('No agents found');
+    }
+    return result;
   }
 
   @Get('type/:coinType')
-  findByType(@Param('coinType') coinType: string) {
-    return this.agentService.findAgentsByType(coinType);
+  async findByType(@Param('coinType') coinType: string) {
+    const result = await this.agentService.findAgentsByType(coinType);
+    if (!result || result.length === 0) {
+      throw new NotFoundException(`Agents with type '${coinType}' not found`);
+    }
+    return result;
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.agentService.getAgentById(id);
+  async findOne(@Param('id') id: string) {
+    const result = await this.agentService.getAgentById(id);
+    
+    if (!result) {
+      throw new NotFoundException(`Agent with ID '${id}' not found`);
+    }
+    return result;
   }
 
   @Get(':id/account')
-  getAccountDetails(@Param('id') id: string) {
-    return this.agentService.getAgentAccountDetails(id);
+  async getAccountDetails(@Param('id') id: string) {
+    const result = await this.agentService.getAgentAccountDetails(id);
+    if (!result) {
+      throw new NotFoundException(`Account details for agent with ID '${id}' not found`);
+    }
+    return result;
   }
 
   @Put(':id/limits')
@@ -54,7 +62,6 @@ export class AgentController {
     return this.agentService.updateAgentLimits(id, updateDto);
   }
 
-  // @UseGuards(JwtAuthGuard)
   @Post(':id/balance')
   addBalance(
     @Param('id') id: string,
@@ -76,7 +83,6 @@ export class AgentController {
     return this.agentService.createWithdrawRequest(withdrawDto);
   }
 
-  // @UseGuards(JwtAuthGuard)
   @Post('withdraw/:id/approve')
   approveWithdrawal(
     @Param('id') id: string,
@@ -98,7 +104,6 @@ export class AgentController {
     return this.agentService.createDepositRequest(depositDto);
   }
 
-  // @UseGuards(JwtAuthGuard)
   @Post('deposit/:id/approve')
   approveDeposit(
     @Param('id') id: string,
@@ -107,7 +112,6 @@ export class AgentController {
     return this.agentService.approveDeposit(id, approveDto.agentId);
   }
 
-  // @UseGuards(JwtAuthGuard)
   @Post('deposit/:id/cancel')
   cancelDeposit(
     @Param('id') id: string,
@@ -116,7 +120,6 @@ export class AgentController {
     return this.agentService.cancelDeposit(id, cancelDto.agentId);
   }
 
-  // @UseGuards(JwtAuthGuard)
   @Post(':id/withdraw-balance')
   agentWithdrawBalance(
     @Param('id') id: string,

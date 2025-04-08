@@ -8,7 +8,7 @@ import { UsersService } from '../../src/users/users.service';
 @Injectable()
 export class AgentService {
   constructor(private readonly prisma: PrismaService, private usersService: UsersService) {}
-  async createAgent(data: {
+  createAgent = async (data: {
     addr: string;
     coinType: string;
     minWithdrawLimit?: number;
@@ -18,7 +18,7 @@ export class AgentService {
     accountNumber: string;
     bank: string;
     name: string
-  }) {
+  }) => {
     return this.prisma.prismaClient.agent.create({
       data: {
         addr: data.addr,
@@ -213,7 +213,7 @@ async getBestWithdrawalAgent(coinType: string, amount: number): Promise<{ id: st
     });
 
     if (!withdrawRequest) {
-      throw new Error('withdrawRequest not found');
+      throw new Error('Withdrawal request not found');
     }
 
     const agent = await this.prisma.prismaClient.agent.findUnique({
@@ -332,7 +332,7 @@ async getBestWithdrawalAgent(coinType: string, amount: number): Promise<{ id: st
     });
 
     if (!depositRequest) {
-      throw new Error('depositRequest not found');
+      throw new Error('Deposit request not found');
     }
 
     const agent = await this.prisma.prismaClient.agent.findUnique({
@@ -418,7 +418,7 @@ async getBestWithdrawalAgent(coinType: string, amount: number): Promise<{ id: st
       },
     });
 
-    // Update agent's totals
+    // Update agent's totalsCANCELLED
     await this.prisma.prismaClient.agent.update({
       where: { id: agentId },
       data: {
