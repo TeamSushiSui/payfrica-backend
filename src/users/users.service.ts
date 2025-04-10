@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
@@ -71,7 +72,6 @@ export class UsersService {
             },
             include: { accountDetails: true },
         });
-        console.log('Updated user with account details:', updatedUser);
         return updatedUser;
     }
 

@@ -1,98 +1,229 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+To update your README file with detailed documentation for your API services, including setup instructions and endpoint details, you can replace or append the following content to your existing README file:
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+---
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+# API Documentation
 
-## Description
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Setup Instructions](#setup-instructions)
+   - [Prerequisites](#prerequisites)
+   - [Installation](#installation)
+   - [Environment Variables](#environment-variables)
+   - [Running the Application](#running-the-application)
+3. [API Endpoints](#api-endpoints)
+   - [Users Service](#users-service)
+     - [GET /users/:address](#get-usersaddress)
+     - [GET /users/:address/transactions](#get-usersaddresstransactions)
+     - [GET /users/:address/stats](#get-usersaddressstats)
+   - [Agent Service](#agent-service)
+     - [POST /agent](#post-agent)
+     - [GET /agent](#get-agent)
+     - [GET /agent/type/:coinType](#get-agenttypecointype)
+     - [GET /agent/:id](#get-agentid)
+     - [GET /agent/:id/account](#get-agentidaccount)
+     - [PUT /agent/:id/limits](#put-agentidlimits)
+     - [POST /agent/:id/balance](#post-agentidbalance)
+     - [POST /agent/withdraw](#post-agentwithdraw)
+     - [POST /agent/withdraw/:id/approve](#post-agentwithdrawidapprove)
+     - [POST /agent/deposit](#post-agentdeposit)
+     - [POST /agent/deposit/:id/approve](#post-agentdepositidapprove)
+     - [POST /agent/deposit/:id/cancel](#post-agentdepositidcancel)
+     - [POST /agent/:id/withdraw-balance](#post-agentidwithdraw-balance)
+4. [Error Handling](#error-handling)
+5. [License](#license)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## Introduction
+This API provides services for managing users and agents in a financial platform. It includes features such as user creation, transaction history retrieval, agent management, and handling deposits and withdrawals.
 
-```bash
-$ pnpm install
+---
+
+## Setup Instructions
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or pnpm (v7 or higher)
+- PostgreSQL database
+
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-repo-name.git
+   cd your-repo-name
+   ```
+
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+
+### Environment Variables
+Create a `.env` file in the root directory and configure the following variables:
+```env
+DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+PORT=3000
+JWT_SECRET=your_jwt_secret
 ```
 
-## Compile and run the project
+### Running the Application
+1. Run database migrations:
+   ```bash
+   pnpm prisma migrate dev
+   ```
 
-```bash
-# development
-$ pnpm run start
+2. Start the application:
+   ```bash
+   pnpm start:dev
+   ```
 
-# watch mode
-$ pnpm run start:dev
+3. The API will be available at `http://localhost:3000`.
 
-# production mode
-$ pnpm run start:prod
-```
+---
 
-## Run tests
+## API Endpoints
 
-```bash
-# unit tests
-$ pnpm run test
+### Users Service
 
-# e2e tests
-$ pnpm run test:e2e
+#### **GET /users/:address**
+- **Description**: Retrieves a user by their address. If the user does not exist, it creates a new user.
+- **Parameters**:
+  - `address` (path): The blockchain address of the user.
+- **Response**:
+  ```json
+  {
+    "id": "user123",
+    "address": "0x123",
+    "username": "john_doe",
+    "totalWithdrawn": 1000,
+    "totalDeposited": 2000
+  }
+  ```
 
-# test coverage
-$ pnpm run test:cov
-```
+#### **GET /users/:address/transactions**
+- **Description**: Retrieves the transaction history (withdrawals and deposits) for a user.
+- **Parameters**:
+  - `address` (path): The blockchain address of the user.
+- **Response**:
+  ```json
+  {
+    "user": { ... },
+    "withdrawals": [ ... ],
+    "deposits": [ ... ]
+  }
+  ```
 
-## Deployment
+#### **GET /users/:address/stats**
+- **Description**: Retrieves user statistics, including totals and active transactions.
+- **Parameters**:
+  - `address` (path): The blockchain address of the user.
+- **Response**:
+  ```json
+  {
+    "address": "0x123",
+    "totalWithdrawn": 1000,
+    "totalDeposited": 2000,
+    "activeWithdrawals": 2,
+    "activeDeposits": 3,
+    "activeWithdrawalAmount": 500,
+    "activeDepositAmount": 800
+  }
+  ```
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+---
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Agent Service
 
-```bash
-$ pnpm install -g mau
-$ mau deploy
-```
+#### **POST /agent**
+- **Description**: Creates a new agent.
+- **Request Body**:
+  ```json
+  {
+    "addr": "0x123",
+    "coinType": "BTC",
+    "minWithdrawLimit": 100,
+    "maxWithdrawLimit": 1000,
+    "minDepositLimit": 50,
+    "maxDepositLimit": 500,
+    "accountNumber": "123456789",
+    "bank": "Test Bank",
+    "name": "Agent Name"
+  }
+  ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+#### **GET /agent**
+- **Description**: Retrieves all agents.
+- **Response**:
+  ```json
+  [
+    { ... },
+    { ... }
+  ]
+  ```
 
-## Resources
+#### **GET /agent/type/:coinType**
+- **Description**: Retrieves agents filtered by their coin type.
+- **Parameters**:
+  - `coinType` (path): The type of coin (e.g., BTC, ETH).
 
-Check out a few resources that may come in handy when working with NestJS:
+#### **GET /agent/:id**
+- **Description**: Retrieves an agent by their ID.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+#### **GET /agent/:id/account**
+- **Description**: Retrieves account details for a specific agent.
 
-## Support
+#### **PUT /agent/:id/limits**
+- **Description**: Updates withdrawal and deposit limits for an agent.
+- **Request Body**:
+  ```json
+  {
+    "minWithdrawLimit": 100,
+    "maxWithdrawLimit": 1000,
+    "minDepositLimit": 50,
+    "maxDepositLimit": 500
+  }
+  ```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+#### **POST /agent/:id/balance**
+- **Description**: Adds funds to an agent's balance.
+- **Request Body**:
+  ```json
+  {
+    "amount": 500
+  }
+  ```
 
-## Stay in touch
+#### **POST /agent/withdraw**
+- **Description**: Creates a withdrawal request for an agent.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+#### **POST /agent/withdraw/:id/approve**
+- **Description**: Approves a withdrawal request by its ID.
+
+#### **POST /agent/deposit**
+- **Description**: Creates a deposit request for an agent.
+
+#### **POST /agent/deposit/:id/approve**
+- **Description**: Approves a deposit request by its ID.
+
+#### **POST /agent/deposit/:id/cancel**
+- **Description**: Cancels a deposit request by its ID.
+
+#### **POST /agent/:id/withdraw-balance**
+- **Description**: Allows an agent to withdraw funds from their balance.
+
+---
+
+## Error Handling
+- **404 Not Found**: Returned when a resource (e.g., user, agent) is not found.
+- **400 Bad Request**: Returned for invalid input or missing required fields.
+- **500 Internal Server Error**: Returned for unexpected server errors.
+
+---
 
 ## License
+This project is licensed under the MIT License.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+---
+
+You can now replace or append this content to your existing README file. Let me know if you need further assistance!

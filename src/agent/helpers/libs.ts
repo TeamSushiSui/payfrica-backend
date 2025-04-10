@@ -52,18 +52,18 @@ export const mockAccountDetails = (accountDetails: {
   }
 }
 
-export const mockUserData = (userData: Partial<User>) => {
+export const mockUserData = (userData: Partial<User>, accountDetails = {
+  id: "643d1f9e8f1b2c0012345679", // Mock ObjectId for account details
+  accountNumber: "1234567890", // Mock account number
+  name: "John Doe", // Mock account holder name
+  bank: "Mock Bank", // Mock bank name
+  userId: "643d1f9e8f1b2c0012345678", // Reference to the user ID
+}) => {
   return {
     id: "643d1f9e8f1b2c0012345678", // Mock ObjectId
     address: "0xabcdef1234567890", // Mock blockchain address
     username: "john_doe", // Mock username
-    accountDetails: {
-      id: "643d1f9e8f1b2c0012345679", // Mock ObjectId for account details
-      accountNumber: "1234567890", // Mock account number
-      name: "John Doe", // Mock account holder name
-      bank: "Mock Bank", // Mock bank name
-      userId: "643d1f9e8f1b2c0012345678", // Reference to the user ID
-    },
+    accountDetails,
     withdrawals: [], // Empty array for withdrawal history
     deposits: [], // Empty array for deposit history
     totalWithdrawn: 0, // Default total withdrawn amount
