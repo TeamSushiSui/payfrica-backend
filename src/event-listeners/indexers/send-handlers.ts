@@ -2,8 +2,7 @@
 
 import { PrismaClient, TransactionType, TransactionStatus } from '@prisma/client';
 import { SuiEvent } from '@mysten/sui/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../db';
 
 type CoinEvent = {
   coin_type: { name: string };

@@ -7,10 +7,12 @@ import { UsersModule } from './users/users.module';
 import { AgentModule } from './agent/agent.module';
 // import { EventListenersService } from './event-listeners/event-listeners.service';
 import { EventListenersModule } from './event-listeners/event-listeners.module';
+import { PoolsService } from './pools/pools.service';
+import { PoolsController } from './pools/pools.controller';
 
 @Module({
   imports: [PrismaModule, UsersModule, AgentModule, EventListenersModule],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, PoolsController],
+  providers: [AppService, PoolsService],
 })
 export class AppModule {}

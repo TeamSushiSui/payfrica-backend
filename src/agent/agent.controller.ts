@@ -3,15 +3,18 @@ import {
   Controller,
   Get,
   Query,
+  Param,
   ParseIntPipe,
   NotFoundException,
+  Patch,
+  Body,
 } from '@nestjs/common';
 import { AgentService } from './agent.service';
-import { CreateAgentDto } from './dto/create-agent.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
 
 @Controller('agent')
 export class AgentController {
-  constructor(private readonly agentService: AgentService) { }
+  constructor(private readonly agentService: AgentService) {}
 
   /**
    * GET /agent/best-deposit-agent?coinType=NGNC&amount=5000
@@ -32,129 +35,105 @@ export class AgentController {
     );
     if (!agent) {
       throw new NotFoundException(
-        `No suitable agent for ${coinType} with amount ${amount}`,
+        `No suitable deposit agent for ${coinType} amount ${amount}`,
       );
     }
     return agent;
   }
-  // @Post()
-  // create(@Body(new ValidationPipe()) createAgentDto: CreateAgentDto) {
-  //   return this.agentService.createAgent(createAgentDto);
-  // }
 
-  // @Get()
-  // async findAll() {
-  //   const result = await this.agentService.getAllAgents();
-  //   if (!result || result.length === 0) {
-  //     throw new NotFoundException('No agents found');
-  //   }
-  //   return result;
-  // }
+  /**
+   * GET /agent/best-withdraw-agent?coinType=NGNC&amount=5000
+   */
+  @Get('best-withdraw-agent')
+  async getBestWithdrawalAgent(
+    @Query('coinType') coinType: string,
+    @Query('amount', ParseIntPipe) amount: number,
+  ): Promise<{ id: string }> {
+    const agent = await this.agentService.getBestWithdrawalAgent(
+      coinType,
+      amount,
+    );
+    if (!agent) {
+      throw new NotFoundException(
+        `No suitable withdrawal agent for ${coinType} amount ${amount}`,
+      );
+    }
+    return agent;
+  }
 
-  // @Get('type/:coinType')
-  // async findByType(@Param('coinType') coinType: string) {
-  //   const result = await this.agentService.findAgentsByType(coinType);
-  //   if (!result || result.length === 0) {
-  //     throw new NotFoundException(`Agents with type '${coinType}' not found`);
-  //   }
-  //   return result;
-  // }
+  /**
+   * GET /agent/account-details?agentId=...
+   */
+  @Get('account-details')
+  async getAgentAccountDetails(
+    @Query('agentId') agentId: string,
+  ): Promise<{ accountNumber: string; bank: string; name: string }> {
+    const details = await this.agentService.getAgentAccountDetails(agentId);
+    if (!details) {
+      throw new NotFoundException(`Agent ${agentId} not found`);
+    }
+    return details;
+  }
 
-  // @Get(':id')
-  // async findOne(@Param('id') id: string) {
-  //   const result = await this.agentService.getAgentById(id);
-    
-  //   if (!result) {
-  //     throw new NotFoundException(`Agent with ID '${id}' not found`);
-  //   }
-  //   return result;
-  // }
+  /**
+   * PATCH /agent/:agentId/account
+   * body: { accountName, accountNumber, accountBank }
+   */
+  @Patch(':agentId/account')
+  async updateAgentAccount(
+    @Param('agentId') agentId: string,
+    @Body() dto: UpdateAccountDto,
+  ) {
+    return this.agentService.updateAccount(agentId, dto);
+  }
 
-  // @Get(':id/account')
-  // async getAccountDetails(@Param('id') id: string) {
-  //   const result = await this.agentService.getAgentAccountDetails(id);
-  //   if (!result) {
-  //     throw new NotFoundException(`Account details for agent with ID '${id}' not found`);
-  //   }
-  //   return result;
-  // }
+  /**
+   * GET /agent/:agentId/withdraw-requests
+   */
+  @Get(':agentId/withdraw-requests')
+  async findWithdrawRequests(
+    @Param('agentId') agentId: string,
+  ) {
+    return this.agentService.findWithdrawRequests(agentId);
+  }
 
-  // @Put(':id/limits')
-  // updateLimits(
-  //   @Param('id') id: string,
-  //   @Body() updateDto: {
-  //     minWithdrawLimit?: number;
-  //     maxWithdrawLimit?: number;
-  //     minDepositLimit?: number;
-  //     maxDepositLimit?: number;
-  //   }
-  // ) {
-  //   return this.agentService.updateAgentLimits(id, updateDto);
-  // }
+  /**
+   * GET /agent/:agentId/deposit-requests
+   */
+  @Get(':agentId/deposit-requests')
+  async findDepositRequests(
+    @Param('agentId') agentId: string,
+  ) {
+    return this.agentService.findDepositRequests(agentId);
+  }
 
-  // @Post(':id/balance')
-  // addBalance(
-  //   @Param('id') id: string,
-  //   @Body() balanceDto: { amount: number }
-  // ) {
-  //   return this.agentService.addAgentBalance(id, balanceDto.amount);
-  // }
+  /**
+   * GET /agent/:agentId/pending-withdraw-requests
+   */
+  @Get(':agentId/pending-withdraw-requests')
+  async findPendingWithdrawRequests(
+    @Param('agentId') agentId: string,
+  ) {
+    return this.agentService.findPendingWithdrawRequests(agentId);
+  }
 
-  // @Post('withdraw')
-  // createWithdrawRequest(
-  //   @Body() withdrawDto: {
-  //     requestId: string;
-  //     amount: number;
-  //     user: string;
-  //     agentId: string;
-  //     coinType: string;
-  //   }
-  // ) {
-  //   return this.agentService.createWithdrawRequest(withdrawDto);
-  // }
+  /**
+   * GET /agent/:agentId/pending-deposit-requests
+   */
+  @Get(':agentId/pending-deposit-requests')
+  async findPendingDepositRequests(
+    @Param('agentId') agentId: string,
+  ) {
+    return this.agentService.findPendingDepositRequests(agentId);
+  }
 
-  // @Post('withdraw/:id/approve')
-  // approveWithdrawal(
-  //   @Param('id') id: string,
-  //   @Body() approveDto: { agentId: string }
-  // ) {
-  //   return this.agentService.approveWithdrawal(id, approveDto.agentId);
-  // }
-
-  // @Post('deposit')
-  // createDepositRequest(
-  //   @Body() depositDto: {
-  //     requestId: string;
-  //     amount: number;
-  //     user: string;
-  //     agentId: string;
-  //     coinType: string;
-  //   }
-  // ) {
-  //   return this.agentService.createDepositRequest(depositDto);
-  // }
-
-  // @Post('deposit/:id/approve')
-  // approveDeposit(
-  //   @Param('id') id: string,
-  //   @Body() approveDto: { agentId: string }
-  // ) {
-  //   return this.agentService.approveDeposit(id, approveDto.agentId);
-  // }
-
-  // @Post('deposit/:id/cancel')
-  // cancelDeposit(
-  //   @Param('id') id: string,
-  //   @Body() cancelDto: { agentId: string }
-  // ) {
-  //   return this.agentService.cancelDeposit(id, cancelDto.agentId);
-  // }
-
-  // @Post(':id/withdraw-balance')
-  // agentWithdrawBalance(
-  //   @Param('id') id: string,
-  //   @Body() withdrawDto: { amount: number }
-  // ) {
-  //   return this.agentService.agentWithdrawBalance(id, withdrawDto.amount);
-  // }
+  /**
+   * GET /agent/valid-types
+   */
+  @Get('valid-types')
+  async getValidTypes(): Promise<
+    { shortName: string; fullType: string }[]
+  > {
+    return this.agentService.getValidAgentTypes();
+  }
 }

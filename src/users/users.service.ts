@@ -2,6 +2,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User, Transaction } from '@prisma/client';
+import { UpdateBaseTokenDto } from './dto/update-base-token.dto';
 
 @Injectable()
 export class UsersService {
@@ -74,32 +75,6 @@ export class UsersService {
     return updatedUser;
   }
 
-  // async getUserTransactionHistory(address: string) {
-  //   const user = await this.prisma.prismaClient.user.findUnique({
-  //     where: { address },
-  //   });
-
-  //   if (!user) {
-  //     return null;
-  //   }
-
-  //   const withdrawals = await this.prisma.prismaClient.withdrawRequest.findMany({
-  //     where: { user: address },
-  //     orderBy: { requestTime: 'desc' },
-  //   });
-
-  //   const deposits = await this.prisma.prismaClient.depositRequest.findMany({
-  //     where: { user: address },
-  //     orderBy: { requestTime: 'desc' },
-  //   });
-
-  //   return {
-  //     user,
-  //     withdrawals,
-  //     deposits,
-  //   };
-  // }
-
   async getUserTransactionHistory(address: string): Promise<{
     user: User;
     transactions: Transaction[];
@@ -117,7 +92,6 @@ export class UsersService {
       return null;
     }
 
-    // Separate out the user and the transactions for clarity
     const { transactions, ...user } = userWithTransactions;
     return { user, transactions };
   }
@@ -149,11 +123,11 @@ export class UsersService {
 
     // Calculate active amounts
     const activeWithdrawalAmount = activeWithdrawals.reduce(
-      (sum, withdrawal) => sum + withdrawal.amount, 0
+      (sum, withdrawal) => sum + Number(withdrawal.amount), 0
     );
 
     const activeDepositAmount = activeDeposits.reduce(
-      (sum, deposit) => sum + deposit.amount, 0
+      (sum, deposit) => sum + Number(deposit.amount), 0
     );
 
     return {
@@ -163,6 +137,73 @@ export class UsersService {
       activeWithdrawalAmount,
       activeDepositAmount,
     };
+  }
+
+  async getUserBaseToken(userId: string): Promise<{
+    name: string;
+    coinType: string;
+    decimals: number;
+    symbol: string;
+  } | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { baseToken: true },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    if (!user.baseToken) {
+      return null;
+    }
+    const { name, coinType, decimals, symbol } = user.baseToken;
+    return { name, coinType, decimals, symbol };
+  }
+
+  async updateUserBaseToken(
+    userId: string,
+    dto: UpdateBaseTokenDto,
+  ): Promise<{
+    name: string;
+    coinType: string;
+    decimals: number;
+    symbol: string;
+  }> {
+    // 1) Ensure user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    // 2) Upsert the BaseToken (create if missing, else update its fields)
+    const token = await this.prisma.baseToken.upsert({
+      where: { name: dto.name },
+      create: {
+        name:     dto.name,
+        coinType: dto.coinType,
+        decimals: dto.decimals,
+        symbol:   dto.symbol,
+      },
+      update: {
+        coinType: dto.coinType,
+        decimals: dto.decimals,
+        symbol:   dto.symbol,
+      },
+    });
+
+    // 3) Connect user → this BaseToken
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        baseToken: { connect: { id: token.id } },
+      },
+      include: { baseToken: true },
+    });
+
+    // 4) Return the BaseToken shape
+    const { name, coinType, decimals, symbol } = updatedUser.baseToken!;
+    return { name, coinType, decimals, symbol };
   }
 
   // async findUserByWallet(walletAddress: string): Promise<User | null> {

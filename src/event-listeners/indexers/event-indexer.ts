@@ -3,6 +3,9 @@
 import { EventId, SuiClient, SuiEvent, SuiEventFilter } from '@mysten/sui/client';
 import { CONFIG } from 'config';
 import { handleSend } from './send-handlers';
+import { handleBridgeEvents } from './agent-handlers';
+import { handleTransactionHistory } from './transactionHistory-handlers';
+import { handlePoolEvents } from './pool-handlers';
 import { getClient } from 'sui-utils';
 import { PrismaClient } from '@prisma/client';
 
@@ -14,12 +17,13 @@ type EventExecutionResult = {
 };
 
 type EventTracker = {
-  type: string;                  // e.g. `${PACKAGE_ID}::send`
+  type: string;                   // e.g. `${PACKAGE_ID}::send`
   filter: SuiEventFilter;
-  callback: (events: SuiEvent[], type: string) => any;
+  callback: (events: SuiEvent[], type: string) => Promise<any>;
 };
 
 const EVENTS_TO_TRACK: EventTracker[] = [
+  // 1) SEND events
   {
     type: `${CONFIG.PACKAGE_ID}::send`,
     filter: {
@@ -30,7 +34,36 @@ const EVENTS_TO_TRACK: EventTracker[] = [
     },
     callback: handleSend,
   },
-  // …add more trackers here…
+
+  // 2) AGENTS events (both your bridge‐agents indexer & txn‐history)
+  {
+    type: `${CONFIG.PACKAGE_ID}::agents`,
+    filter: {
+      MoveEventModule: {
+        module: 'agents',
+        package: CONFIG.PACKAGE_ID,
+      },
+    },
+    callback: async (events, type) => {
+      // run both in parallel against the same batch & cursor
+      await Promise.all([
+        handleBridgeEvents(events, type),
+        handleTransactionHistory(events, type),
+      ]);
+    },
+  },
+
+  // 3) POOL_NEW events
+  {
+    type: `${CONFIG.PACKAGE_ID}::pool_new`,
+    filter: {
+      MoveEventModule: {
+        module: 'pool_new',
+        package: CONFIG.PACKAGE_ID,
+      },
+    },
+    callback: handlePoolEvents,
+  },
 ];
 
 const prisma = new PrismaClient();
@@ -38,7 +71,7 @@ const prisma = new PrismaClient();
 const executeEventJob = async (
   client: SuiClient,
   tracker: EventTracker,
-  cursor: SuiEventsCursor,
+  cursor: SuiEventsCursor
 ): Promise<EventExecutionResult> => {
   try {
     const { data, hasNextPage, nextCursor } = await client.queryEvents({
@@ -63,12 +96,12 @@ const executeEventJob = async (
 const runEventJob = async (
   client: SuiClient,
   tracker: EventTracker,
-  cursor: SuiEventsCursor,
+  cursor: SuiEventsCursor
 ) => {
   const result = await executeEventJob(client, tracker, cursor);
   setTimeout(
     () => runEventJob(client, tracker, result.cursor),
-    result.hasNextPage ? 0 : CONFIG.POLLING_INTERVAL_MS,
+    result.hasNextPage ? 0 : CONFIG.POLLING_INTERVAL_MS
   );
 };
 
@@ -83,17 +116,13 @@ const getLatestCursor = async (
     : undefined;
 };
 
-/**
- * Upsert the cursor document in MongoDB *without* using transactions,
- * by leveraging the underlying update command with upsert:true.
- */
 const saveLatestCursor = async (
   tracker: EventTracker,
   cursor: EventId
 ) => {
   const id = tracker.type;
   await prisma.$runCommandRaw({
-    update: 'Cursor',         // your collection name
+    update: 'Cursor',
     updates: [
       {
         q: { id },
