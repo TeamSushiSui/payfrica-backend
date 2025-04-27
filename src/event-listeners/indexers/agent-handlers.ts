@@ -1,5 +1,8 @@
 import { SuiEvent } from '@mysten/sui/client';
 import { prisma } from '../../db';
+import { CONFIG } from 'config';
+
+const PAYF_RES_ID = CONFIG.PAYF_RES_ID;
 
 type Payload = Record<string, any>;
 
@@ -10,7 +13,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
         if (!evt.type.startsWith(moduleType)) {
             throw new Error(`Expected events from ${moduleType}, got ${evt.type}`);
         }
-
+        
         // e.g. "payfrica::bridge_agents::WithdrawalRequestEvent"
         const parts = evt.type.split('::');
         const eventName = parts[parts.length - 1]!;
@@ -75,7 +78,6 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                 const { agent_type } = data;
                 const fullType  = agent_type.name;                // e.g. "payfrica::agents::Foo"
                 const shortName = fullType.split('::').pop()!;    // "Foo"
-                const PAYF_RES_ID = '0xe009bc22cd83b37ee9eca0bf2dea89fefb49574099d669f16f1541ba491dd6b1';
               
                 // single async IIFE so we can both upsert & update in one pass
                 ops.push((async () => {

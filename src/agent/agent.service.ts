@@ -4,9 +4,10 @@ import { PrismaService } from '../../src/prisma/prisma.service';
 import { WithdrawRequest, DepositRequest, Agent } from '@prisma/client';
 import { UsersService } from '../../src/users/users.service';
 import { UpdateAccountDto } from './dto/update-account.dto';
+import { CONFIG } from 'config';
 
-const PAYF_RES_ID =
-  '0xe009bc22cd83b37ee9eca0bf2dea89fefb49574099d669f16f1541ba491dd6b1';
+const PAYF_RES_ID = CONFIG.PAYF_RES_ID;
+
 @Injectable()
 export class AgentService {
     constructor(private readonly prisma: PrismaService, private usersService: UsersService) { }
