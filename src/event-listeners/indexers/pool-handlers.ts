@@ -18,7 +18,7 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
         switch (eventName) {
             case 'PoolCreatedEvent': {
                 const { pool_id, coin_decimal, coin_type } = data;
-                const shortName = coin_type.split('::').pop()!; 
+                const shortName = coin_type.name.split('::').pop()!; 
                 ops.push(prisma.pool.upsert({
                     where: { id: pool_id },
                     create: {
