@@ -76,8 +76,8 @@ export class PoolsController {
     rates_dollar: number;
   }> {
     return this.poolsService.findByCoinName(coinName);
-  }
-
+  } 
+  
   @Patch('coin/:coinName/rates')
   updateRatesByCoinName(
     @Param('coinName') coinName: string,

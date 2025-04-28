@@ -30,9 +30,9 @@ export async function handleTransactionHistory(
   // 2) Bulk-fetch users once
   const users = await prisma.user.findMany({
     where: { address: { in: Array.from(addrs) } },
-    select: { id: true, address: true },
+    select: {  address: true },
   });
-  const idByAddress = new Map(users.map(u => [u.address, u.id]));
+  const idByAddress = new Map(users.map(u => [u.address, u.address]));
 
   // 3) Process events
   const ops: Array<Promise<any>> = [];

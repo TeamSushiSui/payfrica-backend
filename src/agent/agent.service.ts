@@ -8,11 +8,26 @@ import { CONFIG } from 'config';
 
 const PAYF_RES_ID = CONFIG.PAYF_RES_ID;
 
+function generateBankSafeComment(): string {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const randomLetter = () => letters[Math.floor(Math.random() * letters.length)];
+    const randomDigit = () => Math.floor(Math.random() * 10);
+
+    const comment = [
+        randomLetter(), randomLetter(),
+        randomDigit(), randomDigit(), randomDigit(),
+        Math.random() > 0.5 ? randomLetter() : '' // optional last letter
+    ].join('');
+
+    return comment;
+}
+
+
 @Injectable()
 export class AgentService {
     constructor(private readonly prisma: PrismaService, private usersService: UsersService) { }
-    async getBestDepositAgent(coinType: string, amount: number): Promise<{ id: string, accountNumber: string, bank: string, name: string } | null> {
-        const agents = await this.prisma.prismaClient.agent.findMany({
+    async getBestDepositAgent(coinType: string, amount: number): Promise<{ id: string, accountNumber: string, bank: string, name: string, comment: string } | null> {
+        const agents = await this.prisma.agent.findMany({
             where: {
                 coinType: coinType
             },
@@ -26,28 +41,31 @@ export class AgentService {
                 maxDepositLimit: true
             }
         });
-
+    
         const suitableAgent = agents.find(agent => {
             const hasEnoughBalance = agent.balance >= amount;
             const withinMinLimit = amount >= agent.minDepositLimit;
             const withinMaxLimit = amount <= Number(agent.maxDepositLimit) || agent.maxDepositLimit === BigInt(0);
             return hasEnoughBalance && withinMinLimit && withinMaxLimit;
         });
-
+    
         if (!suitableAgent) {
             return null;
         }
-
+    
+        const comment = generateBankSafeComment();
+    
         return {
             id: suitableAgent.id,
             accountNumber: suitableAgent.accountNumber,
             bank: suitableAgent.bank,
-            name: suitableAgent.name
+            name: suitableAgent.name,
+            comment: comment
         };
     }
 
     async getBestWithdrawalAgent(coinType: string, amount: number): Promise<{ id: string } | null> {
-        const agents = await this.prisma.prismaClient.agent.findMany({
+        const agents = await this.prisma.agent.findMany({
             where: {
                 coinType: coinType
             },
@@ -76,7 +94,7 @@ export class AgentService {
     }
 
     async getAgentAccountDetails(agentId: string): Promise<{ accountNumber: string; bank: string; name: string } | null> {
-        return this.prisma.prismaClient.agent.findUnique({
+        return this.prisma.agent.findUnique({
             where: { id: agentId },
             select: {
                 accountNumber: true,
@@ -87,28 +105,28 @@ export class AgentService {
     }
 
     async findWithdrawRequests(agentId: string): Promise<WithdrawRequest[]> {
-        return this.prisma.WithdrawRequest.findMany({
+        return this.prisma.withdrawRequest.findMany({
             where: { agentId },
             orderBy: { requestTime: 'desc' },
         });
     }
     async findDepositRequests(agentId: string): Promise<DepositRequest[]> {
-        return this.prisma.DepositRequest.findMany({
+        return this.prisma.depositRequest.findMany({
             where: { agentId },
             orderBy: { requestTime: 'desc' },
         });
     }
 
     async findPendingWithdrawRequests(agentId: string) {
-        return this.prisma.WithdrawRequest.findMany({
-            where: { agentId, status: 'Pending' },
+        return this.prisma.withdrawRequest.findMany({
+            where: { agentId, status: 'PENDING' },
             orderBy: { requestTime: 'desc' },
         });
     }
 
     async findPendingDepositRequests(agentId: string) {
-        return this.prisma.DepositRequest.findMany({
-            where: { agentId, status: 'Pending' },
+        return this.prisma.depositRequest.findMany({
+            where: { agentId, status: 'PENDING' },
             orderBy: { requestTime: 'desc' },
         });
     }
@@ -130,6 +148,9 @@ export class AgentService {
           select: { validTypes: true },
         });
         if (!rec || !Array.isArray(rec.validTypes)) {
+          return [];
+        }
+        if (!Array.isArray(rec.validTypes) || !rec.validTypes.every(item => typeof item === 'object' && item !== null)) {
           return [];
         }
         return (rec.validTypes as Record<string, string>[]).map((obj) => {

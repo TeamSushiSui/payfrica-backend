@@ -8,8 +8,8 @@ datasource db {
 }
 
 model User {
-  id              String           @id @map("_id") @db.ObjectId
-  address         String           @unique
+  /// ⚠ address now _is_ the Mongo _id
+  address         String           @id @map("_id")
   username        String?
 
   /// link to the user’s preferred base token
@@ -17,22 +17,22 @@ model User {
   baseToken       BaseToken?       @relation(fields: [baseTokenId], references: [id])
 
   accountDetails  AccountDetails?
-  transactions    Transaction[]          
+  transactions    Transaction[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
 
-
 model BaseToken {
-  id        String   @id @map("_id") @db.ObjectId
-  name      String   @unique
+  id        String    @id @map("_id") @db.ObjectId @default(auto())
+  name      String    @unique
   coinType  String
   decimals  Int
   symbol    String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
-  users     User[]   // ← all users who’ve picked this token
+  users     User[]    // all users who’ve picked this token
 }
+
 
 model Transaction {
   id               String              @id @default(cuid()) @map("_id")
@@ -42,13 +42,12 @@ model Transaction {
   date             DateTime            @default(now())
   status           TransactionStatus
   fees             Float
-  // swap vs send/receive details:
   incomingAsset    String?
   incomingAmount   Float?
   outgoingAsset    String?
   outgoingAmount   Float?
 
-  user             User                @relation(fields: [userId], references: [id])
+  user             User                @relation(fields: [userId], references: [address])
   userId           String
 }
 
@@ -71,7 +70,8 @@ model AccountDetails {
   accountNumber  String
   name           String
   bank           String
-  user           User     @relation(fields: [userId], references: [id])
+
+  user           User     @relation(fields: [userId], references: [address])
   userId         String   @unique
 }
 
@@ -148,6 +148,7 @@ model DepositRequest {
   agentId     String
   successfulAgentId String?
   coinType    String
+  comment     String
   status      DepositStatus @default(PENDING)
   requestTime DateTime      @map("request_time")
   statusTime  DateTime?     @map("status_time")

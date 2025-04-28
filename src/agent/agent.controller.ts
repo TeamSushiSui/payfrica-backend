@@ -28,6 +28,7 @@ export class AgentController {
     accountNumber: string;
     bank: string;
     name: string;
+    comment: string;
   }> {
     const agent = await this.agentService.getBestDepositAgent(
       coinType,

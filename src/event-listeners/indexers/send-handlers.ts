@@ -42,12 +42,19 @@ export async function handleSend(events: SuiEvent[], expectedType: string) {
     const recipientAddress = data.recipient;
 
     // 5) Bulk‐fetch both users
-    const users = await prisma.user.findMany({
-      where: { address: { in: [senderAddress, recipientAddress] } },
-      select: { id: true, address: true },
+    const users = await this.prisma.user.findMany({
+      where: {
+        address: { in: [senderAddress, recipientAddress] },
+      },
+      select: {
+        address: true,
+      },
     });
-    const idByAddress = new Map(users.map(u => [u.address, u.id]));
-
+    
+    // since address is the primary key, map it to itself
+    const idByAddress = new Map<string, string>(
+      users.map(u => [u.address, u.address])
+    );
     // 6) If neither exist, skip the event entirely
     if (!idByAddress.has(senderAddress) && !idByAddress.has(recipientAddress)) {
       console.warn(`No users found for tx ${transactionId}, skipping.`);

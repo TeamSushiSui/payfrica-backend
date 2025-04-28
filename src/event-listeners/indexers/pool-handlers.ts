@@ -14,6 +14,7 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
         const parts = evt.type.split('::');
         const eventName = parts[parts.length - 1]!;
         const data = evt.parsedJson as Payload;
+        console.log(data)
 
         switch (eventName) {
             case 'PoolCreatedEvent': {
@@ -164,16 +165,16 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
         }
 
         // log all events too
-        ops.push(prisma.poolEvent.create({
-            data: {
-                id: evt.id.txDigest,
-                eventType: eventName,
-                poolId: data.pool_id ?? '',
-                coinType: data.coin_type?.name ?? '',
-                details: data,
-                timestamp: new Date(),
-            }
-        }));
+        // ops.push(prisma.poolEvent.create({
+        //     data: {
+        //         id: evt.id.txDigest,
+        //         eventType: eventName,
+        //         poolId: data.pool_id ?? '',
+        //         coinType: data.coin_type?.name ?? '',
+        //         details: data,
+        //         timestamp: new Date(),
+        //     }
+        // }));
     }
 
     await Promise.all(ops);

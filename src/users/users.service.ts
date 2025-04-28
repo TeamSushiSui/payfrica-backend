@@ -9,12 +9,12 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
 
   async findAll(): Promise<User[]> {
-    return await this.prisma.prismaClient.user.findMany();
+    return await this.prisma.user.findMany();
   }
 
   async findOrCreateUser(address: string) {
     // Find user or create if doesn't exist
-    const user = await this.prisma.prismaClient.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { address },
     });
 
@@ -22,29 +22,29 @@ export class UsersService {
       return user;
     }
 
-    return this.prisma.prismaClient.user.create({
-      data: { id: address, address }
+    return this.prisma.user.create({
+      data: { address: address }
     });
   }
 
-  async updateUsername(userId: string, newUsername: string): Promise<User> {
-    const user = await this.prisma.prismaClient.user.findUnique({
-      where: { id: userId },
+  async updateUsername(address: string, newUsername: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { address },
     });
 
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    return this.prisma.prismaClient.user.update({
-      where: { id: userId },
+    return this.prisma.user.update({
+      where: { address },
       data: { username: newUsername },
     });
   }
 
-  async updateAccountDetails(userId: string, account_details: { accountNumber: string, name: string, bank: string }): Promise<User> {
-    const user = await this.prisma.prismaClient.user.findUnique({
-      where: { id: userId },
+  async updateAccountDetails(address: string, account_details: { accountNumber: string, name: string, bank: string }): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { address },
       include: { accountDetails: true }, // Include existing accountDetails
     });
 
@@ -52,8 +52,8 @@ export class UsersService {
       throw new Error('User not found');
     }
 
-    const updatedUser = await this.prisma.prismaClient.user.update({
-      where: { id: userId },
+    const updatedUser = await this.prisma.user.update({
+      where: { address },
       data: {
         accountDetails: {
           upsert: {
@@ -79,7 +79,7 @@ export class UsersService {
     user: User;
     transactions: Transaction[];
   } | null> {
-    const userWithTransactions = await this.prisma.prismaClient.user.findUnique({
+    const userWithTransactions = await this.prisma.user.findUnique({
       where: { address },
       include: {
         transactions: {
@@ -97,7 +97,7 @@ export class UsersService {
   }
 
   async getUserStats(address: string) {
-    const user = await this.prisma.prismaClient.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { address },
     });
 
@@ -106,7 +106,7 @@ export class UsersService {
     }
 
     // Get active (pending) withdrawals
-    const activeWithdrawals = await this.prisma.prismaClient.withdrawRequest.findMany({
+    const activeWithdrawals = await this.prisma.withdrawRequest.findMany({
       where: {
         user: address,
         status: 'PENDING'
@@ -114,7 +114,7 @@ export class UsersService {
     });
 
     // Get active (pending) deposits
-    const activeDeposits = await this.prisma.prismaClient.depositRequest.findMany({
+    const activeDeposits = await this.prisma.depositRequest.findMany({
       where: {
         user: address,
         status: 'PENDING'
@@ -139,14 +139,14 @@ export class UsersService {
     };
   }
 
-  async getUserBaseToken(userId: string): Promise<{
+  async getUserBaseToken(address: string): Promise<{
     name: string;
     coinType: string;
     decimals: number;
     symbol: string;
   } | null> {
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { address },
       include: { baseToken: true },
     });
     if (!user) {
@@ -160,7 +160,7 @@ export class UsersService {
   }
 
   async updateUserBaseToken(
-    userId: string,
+    address: string,
     dto: UpdateBaseTokenDto,
   ): Promise<{
     name: string;
@@ -170,13 +170,12 @@ export class UsersService {
   }> {
     // 1) Ensure user exists
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { address },
     });
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    // 2) Upsert the BaseToken (create if missing, else update its fields)
     const token = await this.prisma.baseToken.upsert({
       where: { name: dto.name },
       create: {
@@ -194,7 +193,7 @@ export class UsersService {
 
     // 3) Connect user → this BaseToken
     const updatedUser = await this.prisma.user.update({
-      where: { id: userId },
+      where: { address},
       data: {
         baseToken: { connect: { id: token.id } },
       },
@@ -207,13 +206,13 @@ export class UsersService {
   }
 
   // async findUserByWallet(walletAddress: string): Promise<User | null> {
-  //     return await this.prisma.prismaClient.user.findUnique({
+  //     return await this.prisma.user.findUnique({
   //       where: { walletAddress },
   //     });
   // }
 
   // async findUserByName(username: string) {
-  //     return await this.prisma.prismaClient.user.findFirst({
+  //     return await this.prisma.user.findFirst({
   //         where: { username },
   //     });
   // }

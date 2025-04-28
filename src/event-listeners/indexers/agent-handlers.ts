@@ -13,7 +13,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
         if (!evt.type.startsWith(moduleType)) {
             throw new Error(`Expected events from ${moduleType}, got ${evt.type}`);
         }
-        
+
         // e.g. "payfrica::bridge_agents::WithdrawalRequestEvent"
         const parts = evt.type.split('::');
         const eventName = parts[parts.length - 1]!;
@@ -151,7 +151,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
             }
 
             case 'DepositRequestEvent': {
-                const { request_id, agent_id, amount, user, coin_type, status, time } = data;
+                const { request_id, agent_id, amount, user, coin_type, comment, status, time } = data;
                 ops.push(prisma.depositRequest.upsert({
                     where: { id: request_id },
                     create: {
@@ -160,6 +160,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                         user: user,
                         amount: BigInt(amount),
                         coinType: coin_type.name,
+                        comment,
                         status: status,
                         requestTime: new Date(time),
                     },

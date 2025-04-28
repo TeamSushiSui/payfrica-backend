@@ -86,7 +86,6 @@ export class PoolsService {
     decimals: number;
     rates_dollar: number;
   }> {
-    // look up the pool by its coinName column
     const pool = await this.prisma.pool.findFirst({
       where: { coinName },
       select: {

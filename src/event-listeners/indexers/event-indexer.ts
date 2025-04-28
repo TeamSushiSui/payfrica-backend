@@ -55,10 +55,10 @@ const EVENTS_TO_TRACK: EventTracker[] = [
 
   // 3) POOL_NEW events
   {
-    type: `${CONFIG.PACKAGE_ID}::pool_new`,
+    type: `${CONFIG.PACKAGE_ID}::pool`,
     filter: {
       MoveEventModule: {
-        module: 'pool_new',
+        module: 'pool',
         package: CONFIG.PACKAGE_ID,
       },
     },

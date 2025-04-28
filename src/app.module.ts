@@ -9,9 +9,10 @@ import { AgentModule } from './agent/agent.module';
 import { EventListenersModule } from './event-listeners/event-listeners.module';
 import { PoolsService } from './pools/pools.service';
 import { PoolsController } from './pools/pools.controller';
+import { PoolsModule } from './pools/pools.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, AgentModule, EventListenersModule],
+  imports: [PrismaModule, UsersModule, AgentModule, EventListenersModule, PoolsModule],
   controllers: [AppController, PoolsController],
   providers: [AppService, PoolsService],
 })
