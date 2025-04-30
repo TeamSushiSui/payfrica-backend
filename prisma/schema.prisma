@@ -8,13 +8,11 @@ datasource db {
 }
 
 model User {
-  /// ⚠ address now _is_ the Mongo _id
   address         String           @id @map("_id")
   username        String?
-
-  /// link to the user’s preferred base token
-  baseTokenId     String?          @db.ObjectId
-  baseToken       BaseToken?       @relation(fields: [baseTokenId], references: [id])
+  language        String           @default("en")
+  country         Country? @relation(fields: [countryname], references: [name])
+  countryname String?
 
   accountDetails  AccountDetails?
   transactions    Transaction[]
@@ -22,17 +20,33 @@ model User {
   updatedAt       DateTime         @updatedAt
 }
 
-model BaseToken {
-  id        String    @id @map("_id") @db.ObjectId @default(auto())
-  name      String    @unique
-  coinType  String
-  decimals  Int
-  symbol    String
-  createdAt DateTime  @default(now())
+model AccountDetails {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  accountNumber  String
+  name           String
+  bank           String
 
-  users     User[]    // all users who’ve picked this token
+  user           User     @relation(fields: [userId], references: [address])
+  userId         String   @unique
 }
 
+model Country { 
+  currencySymbol  String
+  name            String @id @map("_id")
+  baseToken       Tokens? @relation(fields: [baseTokencoinType], references: [coinType])
+  baseTokencoinType String
+
+  User User[]
+}
+
+model Tokens {
+  name    String
+  decimals Int
+  symbol   String
+  coinType String @id @map("_id")
+
+  Country Country[]
+}
 
 model Transaction {
   id               String              @id @default(cuid()) @map("_id")
@@ -65,15 +79,6 @@ enum TransactionStatus {
   FAILED
 }
 
-model AccountDetails {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  accountNumber  String
-  name           String
-  bank           String
-
-  user           User     @relation(fields: [userId], references: [address])
-  userId         String   @unique
-}
 
 
 enum WithdrawStatus {

@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Delete, Put, Patch } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { UpdateBaseTokenDto } from './dto/update-base-token.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { User, Country, AccountDetails } from '@prisma/client';
 // import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('users')
@@ -25,23 +26,18 @@ export class UsersController {
         return this.usersService.getUserStats(address);
     }
 
-    @Get(':userId/base-token')
-    async getBaseToken(
-        @Param('userId') userId: string,
-    ): Promise<{
-        name: string;
-        coinType: string;
-        decimals: number;
-        symbol: string;
-    } | null> {
-        return this.usersService.getUserBaseToken(userId);
-    }
-    @Patch(':userId/base-token')
-    updateBaseToken(
-        @Param('userId') userId: string,
-        @Body() dto: UpdateBaseTokenDto,
-    ) {
-        // DTO validation will ensure all fields are present & correct
-        return this.usersService.updateUserBaseToken(userId, dto);
-    }
+    @Patch(':address')
+  update(
+    @Param('address') address: string,
+    @Body() dto: UpdateUserDto,
+  ): Promise<User> {
+    return this.usersService.update(address, dto);
+  }
+
+  @Get(':address')
+  getOne(
+    @Param('address') address: string,
+  ): Promise<User & { country?: Country; accountDetails?: AccountDetails }> {
+    return this.usersService.findOne(address);
+  }
 }

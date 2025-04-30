@@ -1,9 +1,9 @@
 /* eslint-disable prettier/prettier */
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User, Transaction } from '@prisma/client';
-import { UpdateBaseTokenDto } from './dto/update-base-token.dto';
-
+import { UpdateUserDto } from './dto/update-user.dto';
+import { Country, AccountDetails } from '@prisma/client';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
@@ -98,7 +98,7 @@ export class UsersService {
 
   async getUserStats(address: string) {
     const user = await this.prisma.user.findUnique({
-      where: { address },
+      where: { address }, 
     });
 
     if (!user) {
@@ -139,81 +139,50 @@ export class UsersService {
     };
   }
 
-  async getUserBaseToken(address: string): Promise<{
-    name: string;
-    coinType: string;
-    decimals: number;
-    symbol: string;
-  } | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { address },
-      include: { baseToken: true },
-    });
-    if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+  async update(address: string, dto: UpdateUserDto): Promise<User> {
+    const data: any = {};
+    if (dto.username !== undefined) {
+      data.username = dto.username;
     }
-    if (!user.baseToken) {
-      return null;
+    if (dto.language !== undefined) {
+      data.language = dto.language;
     }
-    const { name, coinType, decimals, symbol } = user.baseToken;
-    return { name, coinType, decimals, symbol };
+    if (dto.countryName !== undefined) {
+      data.country = { connect: { name: dto.countryName } };
+    }
+
+    try {
+      return await this.prisma.user.update({
+        where: { address },
+        data,
+      });
+    } catch (e) {
+      throw new NotFoundException(`User with address ${address} not found.`);
+    }
   }
 
-  async updateUserBaseToken(
+  async findOne(
     address: string,
-    dto: UpdateBaseTokenDto,
-  ): Promise<{
-    name: string;
-    coinType: string;
-    decimals: number;
-    symbol: string;
-  }> {
-    // 1) Ensure user exists
+  ): Promise<User & { country?: Country; accountDetails?: AccountDetails }> {
     const user = await this.prisma.user.findUnique({
       where: { address },
+      include: {
+        country: true,
+        accountDetails: true,
+      },
     });
     if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException(`User with address ${address} not found.`);
     }
 
-    const token = await this.prisma.baseToken.upsert({
-      where: { name: dto.name },
-      create: {
-        name:     dto.name,
-        coinType: dto.coinType,
-        decimals: dto.decimals,
-        symbol:   dto.symbol,
-      },
-      update: {
-        coinType: dto.coinType,
-        decimals: dto.decimals,
-        symbol:   dto.symbol,
-      },
-    });
+    // Destructure out the relations
+    const { country, accountDetails, ...rest } = user;
 
-    // 3) Connect user → this BaseToken
-    const updatedUser = await this.prisma.user.update({
-      where: { address},
-      data: {
-        baseToken: { connect: { id: token.id } },
-      },
-      include: { baseToken: true },
-    });
-
-    // 4) Return the BaseToken shape
-    const { name, coinType, decimals, symbol } = updatedUser.baseToken!;
-    return { name, coinType, decimals, symbol };
+    // Map null → undefined
+    return {
+      ...rest,
+      country: country ?? undefined,
+      accountDetails: accountDetails ?? undefined,
+    };
   }
-
-  // async findUserByWallet(walletAddress: string): Promise<User | null> {
-  //     return await this.prisma.user.findUnique({
-  //       where: { walletAddress },
-  //     });
-  // }
-
-  // async findUserByName(username: string) {
-  //     return await this.prisma.user.findFirst({
-  //         where: { username },
-  //     });
-  // }
 }

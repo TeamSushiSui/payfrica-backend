@@ -1,5 +1,6 @@
 import { SuiEvent } from '@mysten/sui/client';
 import { prisma } from '../../db';
+import { fetchMetadata } from 'sui-utils';
 
 type Payload = Record<string, any>;
 
@@ -20,6 +21,30 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
             case 'PoolCreatedEvent': {
                 const { pool_id, coin_decimal, coin_type } = data;
                 const shortName = coin_type.name.split('::').pop()!; 
+                const coinTypeName = coin_type.name;
+                
+                ops.push(
+                    fetchMetadata(coinTypeName)
+                      .then(meta => prisma.tokens.upsert({
+                        where: { coinType: coinTypeName },
+                        create: {
+                          name:     meta.name,
+                          decimals: meta.decimals,
+                          symbol:   meta.symbol,
+                          coinType: coinTypeName,
+                        },
+                        update: {
+                          name:     meta.name,
+                          decimals: meta.decimals,
+                          symbol:   meta.symbol,
+                        },
+                      }))
+                      .catch(err => {
+                        console.error(`Failed to upsert token metadata for ${coinTypeName}:`, err);
+                        // swallow or rethrow depending on your needs
+                      })
+                  );
+
                 ops.push(prisma.pool.upsert({
                     where: { id: pool_id },
                     create: {
