@@ -1,10 +1,14 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma/prisma.service';
 import { WithdrawRequest, DepositRequest, Agent } from '@prisma/client';
 import { UsersService } from '../../src/users/users.service';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { CONFIG } from 'config';
+
+type AgentTransaction =
+    | (WithdrawRequest & { type: 'withdrawal' })
+    | (DepositRequest & { type: 'deposit' });
 
 const PAYF_RES_ID = CONFIG.PAYF_RES_ID;
 
@@ -21,7 +25,6 @@ function generateBankSafeComment(): string {
 
     return comment;
 }
-
 
 @Injectable()
 export class AgentService {
@@ -41,20 +44,20 @@ export class AgentService {
                 maxDepositLimit: true
             }
         });
-    
+
         const suitableAgent = agents.find(agent => {
             const hasEnoughBalance = agent.balance >= amount;
             const withinMinLimit = amount >= agent.minDepositLimit;
             const withinMaxLimit = amount <= Number(agent.maxDepositLimit) || agent.maxDepositLimit === BigInt(0);
             return hasEnoughBalance && withinMinLimit && withinMaxLimit;
         });
-    
+
         if (!suitableAgent) {
             return null;
         }
-    
+
         const comment = generateBankSafeComment();
-    
+
         return {
             id: suitableAgent.id,
             accountNumber: suitableAgent.accountNumber,
@@ -144,18 +147,53 @@ export class AgentService {
 
     async getValidAgentTypes(): Promise<{ shortName: string; fullType: string }[]> {
         const rec = await this.prisma.payfricaAgents.findUnique({
-          where: { id: PAYF_RES_ID },
-          select: { validTypes: true },
+            where: { id: PAYF_RES_ID },
+            select: { validTypes: true },
         });
         if (!rec || !Array.isArray(rec.validTypes)) {
-          return [];
+            return [];
         }
         if (!Array.isArray(rec.validTypes) || !rec.validTypes.every(item => typeof item === 'object' && item !== null)) {
-          return [];
+            return [];
         }
         return (rec.validTypes as Record<string, string>[]).map((obj) => {
-          const shortName = Object.keys(obj)[0];
-          return { shortName, fullType: obj[shortName] };
+            const shortName = Object.keys(obj)[0];
+            return { shortName, fullType: obj[shortName] };
         });
-      }
+    }
+
+    async getTransactionHistory(agentId: string): Promise<AgentTransaction[]> {
+        // first, ensure the agent exists
+        const agentExists = await this.prisma.agent.findUnique({ where: { id: agentId } });
+        if (!agentExists) {
+            throw new NotFoundException(`Agent with id ${agentId} not found.`);
+        }
+
+        // fetch both sides in parallel
+        const [withdrawals, deposits] = await Promise.all([
+            this.prisma.withdrawRequest.findMany({
+                where: { agentId },
+                orderBy: { requestTime: 'desc' },
+            }),
+            this.prisma.depositRequest.findMany({
+                where: { agentId },
+                orderBy: { requestTime: 'desc' },
+            }),
+        ]);
+
+        // tag each record with its type
+        const taggedWithdrawals: AgentTransaction[] = withdrawals.map(w => ({
+            ...w,
+            type: 'withdrawal' as const,
+        }));
+        const taggedDeposits: AgentTransaction[] = deposits.map(d => ({
+            ...d,
+            type: 'deposit' as const,
+        }));
+
+        // merge & sort by timestamp descending
+        return [...taggedWithdrawals, ...taggedDeposits].sort(
+            (a, b) => b.requestTime.getTime() - a.requestTime.getTime(),
+        );
+    }
 }

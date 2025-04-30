@@ -8,39 +8,39 @@ datasource db {
 }
 
 model User {
-  address         String           @id @map("_id")
-  username        String?
-  language        String           @default("en")
-  country         Country? @relation(fields: [countryname], references: [name])
+  address     String   @id @map("_id")
+  username    String?
+  language    String   @default("en")
+  country     Country? @relation(fields: [countryname], references: [name])
   countryname String?
 
-  accountDetails  AccountDetails?
-  transactions    Transaction[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  accountDetails AccountDetails?
+  transactions   Transaction[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 }
 
 model AccountDetails {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  accountNumber  String
-  name           String
-  bank           String
+  id            String @id @default(auto()) @map("_id") @db.ObjectId
+  accountNumber String
+  name          String
+  bank          String
 
-  user           User     @relation(fields: [userId], references: [address])
-  userId         String   @unique
+  user   User   @relation(fields: [userId], references: [address])
+  userId String @unique
 }
 
-model Country { 
-  currencySymbol  String
-  name            String @id @map("_id")
-  baseToken       Tokens? @relation(fields: [baseTokencoinType], references: [coinType])
+model Country {
+  currencySymbol    String
+  name              String  @id @map("_id")
+  baseToken         Tokens? @relation(fields: [baseTokencoinType], references: [coinType])
   baseTokencoinType String
 
   User User[]
 }
 
 model Tokens {
-  name    String
+  name     String
   decimals Int
   symbol   String
   coinType String @id @map("_id")
@@ -49,20 +49,20 @@ model Tokens {
 }
 
 model Transaction {
-  id               String              @id @default(cuid()) @map("_id")
-  transactionId    String              @unique
-  type             TransactionType
-  interactedWith   String?
-  date             DateTime            @default(now())
-  status           TransactionStatus
-  fees             Float
-  incomingAsset    String?
-  incomingAmount   Float?
-  outgoingAsset    String?
-  outgoingAmount   Float?
+  id             String            @id @default(cuid()) @map("_id")
+  transactionId  String            @unique
+  type           TransactionType
+  interactedWith String?
+  date           DateTime          @default(now())
+  status         TransactionStatus
+  fees           Float
+  incomingAsset  String?
+  incomingAmount Float?
+  outgoingAsset  String?
+  outgoingAmount Float?
 
-  user             User                @relation(fields: [userId], references: [address])
-  userId           String
+  user   User   @relation(fields: [userId], references: [address])
+  userId String
 }
 
 enum TransactionType {
@@ -78,8 +78,6 @@ enum TransactionStatus {
   SUCCESS
   FAILED
 }
-
-
 
 enum WithdrawStatus {
   PENDING
@@ -100,41 +98,41 @@ model PayfricaAgents {
 }
 
 model Agent {
-  id                           String          @id @map("_id")
-  addr                         String          
-  balance                      BigInt           
-  coinType                     String          
-  accountNumber                String
-  bank                         String
-  name                         String
-  pendingWithdrawals           String[] 
-  successfulWithdrawals        String[] 
-  totalSuccessfulWithdrawals   Int             @default(0)
-  totalPendingWithdrawals      Int             @default(0)
-  totalSuccessfulWithdrawalsAmount BigInt       @default(0)
-  totalPendingWithdrawalsAmount BigInt          @default(0)
-  pendingDeposits              String[]
-  successfulDeposits           String[]
-  totalSuccessfulDeposits      BigInt             @default(0)
-  totalPendingDeposits         BigInt             @default(0)
-  totalSuccessfulDepositsAmount BigInt          @default(0)
-  totalPendingDepositsAmount   BigInt           @default(0)
-  unsuccessfulDeposits         String[]
-  totalUnsuccessfulDeposits    Int             @default(0)
-  maxWithdrawLimit             BigInt           @default(0)
-  maxDepositLimit              BigInt           @default(0)
-  minWithdrawLimit             BigInt           @default(0)
-  minDepositLimit              BigInt           @default(0)
-  createdAt                    DateTime        @default(now())
-  updatedAt                    DateTime        @updatedAt
+  id                               String   @id @map("_id")
+  addr                             String
+  balance                          BigInt
+  coinType                         String
+  accountNumber                    String
+  bank                             String
+  name                             String
+  pendingWithdrawals               String[]
+  successfulWithdrawals            String[]
+  totalSuccessfulWithdrawals       Int      @default(0)
+  totalPendingWithdrawals          Int      @default(0)
+  totalSuccessfulWithdrawalsAmount BigInt   @default(0)
+  totalPendingWithdrawalsAmount    BigInt   @default(0)
+  pendingDeposits                  String[]
+  successfulDeposits               String[]
+  totalSuccessfulDeposits          BigInt   @default(0)
+  totalPendingDeposits             BigInt   @default(0)
+  totalSuccessfulDepositsAmount    BigInt   @default(0)
+  totalPendingDepositsAmount       BigInt   @default(0)
+  unsuccessfulDeposits             String[]
+  totalUnsuccessfulDeposits        Int      @default(0)
+  maxWithdrawLimit                 BigInt   @default(0)
+  maxDepositLimit                  BigInt   @default(0)
+  minWithdrawLimit                 BigInt   @default(0)
+  minDepositLimit                  BigInt   @default(0)
+  createdAt                        DateTime @default(now())
+  updatedAt                        DateTime @updatedAt
 
   @@index([addr])
 }
 
 model WithdrawRequest {
-  id          String         @id @map("_id")       
+  id          String         @id @map("_id")
   amount      BigInt
-  user        String         // User's blockchain address
+  user        String // User's blockchain address
   agentId     String
   coinType    String
   status      WithdrawStatus @default(PENDING)
@@ -147,72 +145,72 @@ model WithdrawRequest {
 }
 
 model DepositRequest {
-  id          String       @id @map("_id")
-  amount      BigInt
-  user        String        // User's blockchain address
-  agentId     String
+  id                String        @id @map("_id")
+  amount            BigInt
+  user              String // User's blockchain address
+  agentId           String
   successfulAgentId String?
-  coinType    String
-  comment     String
-  status      DepositStatus @default(PENDING)
-  requestTime DateTime      @map("request_time")
-  statusTime  DateTime?     @map("status_time")
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  coinType          String
+  comment           String
+  status            DepositStatus @default(PENDING)
+  requestTime       DateTime      @map("request_time")
+  statusTime        DateTime?     @map("status_time")
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   @@index([agentId])
 }
 
 model Cursor {
-  id        String   @id @map("_id")
-  eventSeq  String
-  txDigest  String
+  id       String @id @map("_id")
+  eventSeq String
+  txDigest String
 }
 
 model Pool {
-  id                      String   @id @map("_id")
-  coinType                String
-  coinName                String
-  coinBalance             BigInt   // total coin in pool
-  rewardsBalance          BigInt   // total rewards
-  feeDecimal              Int
-  defaultFees             Int?     // nullable
-  coinDecimal             Int
-  ratesDollar             Float
-  createdAt               DateTime @default(now())
+  id             String   @id @map("_id")
+  coinType       String
+  coinName       String
+  coinBalance    BigInt // total coin in pool
+  rewardsBalance BigInt // total rewards
+  feeDecimal     Int
+  defaultFees    Int? // nullable
+  coinDecimal    Int
+  ratesDollar    Float
+  createdAt      DateTime @default(now())
 
-  liquidityProviders      LiquidityProvider[]
-  swapFees                SwapFee[]
+  liquidityProviders LiquidityProvider[]
+  swapFees           SwapFee[]
 }
 
 model LiquidityProvider {
-  id          String   @id @map("_id")
-  poolId      String
-  provider    String   // address
-  amount      BigInt
-  rewards     BigInt   // pending rewards
+  id       String @id @map("_id")
+  poolId   String
+  provider String // address
+  amount   BigInt
+  rewards  BigInt // pending rewards
 
-  pool        Pool     @relation(fields: [poolId], references: [id])
+  pool Pool @relation(fields: [poolId], references: [id])
 
   @@index([poolId])
 }
 
 model SwapFee {
-  id          String   @id @map("_id")
-  poolId      String
-  threshold   BigInt
-  fee         Int
+  id        String @id @map("_id")
+  poolId    String
+  threshold BigInt
+  fee       Int
 
-  pool        Pool     @relation(fields: [poolId], references: [id])
+  pool Pool @relation(fields: [poolId], references: [id])
 
   @@index([poolId])
 }
 
 model PoolEvent {
-  id              String   @id @map("_id")
-  eventType       String
-  poolId          String
-  coinType        String
-  details         Json     // Flexible event details
-  timestamp       DateTime @default(now())
+  id        String   @id @map("_id")
+  eventType String
+  poolId    String
+  coinType  String
+  details   Json // Flexible event details
+  timestamp DateTime @default(now())
 }

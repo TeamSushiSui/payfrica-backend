@@ -1,4 +1,4 @@
-import { Controller, Post, Body  } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { Country } from '@prisma/client';
 import { AdminService } from './admin.service';
@@ -14,5 +14,10 @@ export class AdminController {
   @Post()
   create(@Body() dto: CreateCountryDto): Promise<Country> {
     return this.service.create(dto);
+  }
+
+  @Get()
+  getAllNames(): Promise<string[]> {
+    return this.service.findAllNames();
   }
 }

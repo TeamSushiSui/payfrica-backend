@@ -21,7 +21,7 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
             case 'PoolCreatedEvent': {
                 const { pool_id, coin_decimal, coin_type } = data;
                 const shortName = coin_type.name.split('::').pop()!; 
-                const coinTypeName = coin_type.name;
+                const coinTypeName = `0x${coin_type.name}`;
                 
                 ops.push(
                     fetchMetadata(coinTypeName)
@@ -49,7 +49,7 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                     where: { id: pool_id },
                     create: {
                         id: pool_id,
-                        coinType: coin_type.name,
+                        coinType: coinTypeName,
                         coinName: shortName,
                         coinBalance: BigInt(0),
                         rewardsBalance: BigInt(0),

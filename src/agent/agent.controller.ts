@@ -11,6 +11,11 @@ import {
 } from '@nestjs/common';
 import { AgentService } from './agent.service';
 import { UpdateAccountDto } from './dto/update-account.dto';
+import { WithdrawRequest, DepositRequest } from '@prisma/client';
+
+type AgentTransaction =
+  | (WithdrawRequest & { type: 'withdrawal' })
+  | (DepositRequest  & { type: 'deposit' });
 
 @Controller('agent')
 export class AgentController {
@@ -136,5 +141,12 @@ export class AgentController {
     { shortName: string; fullType: string }[]
   > {
     return this.agentService.getValidAgentTypes();
+  }
+
+  @Get(':agentId/transactions')
+  async getTransactionHistory(
+    @Param('agentId') agentId: string,
+  ): Promise<AgentTransaction[]> {
+    return this.agentService.getTransactionHistory(agentId);
   }
 }
