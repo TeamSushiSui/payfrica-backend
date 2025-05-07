@@ -14,13 +14,11 @@ export class UsersController {
         return this.usersService.findOrCreateUser(address);
     }
 
-    // @UseGuards(JwtAuthGuard)
     @Get(':address/transactions')
     getTransactionHistory(@Param('address') address: string) {
         return this.usersService.getUserTransactionHistory(address);
     }
 
-    // @UseGuards(JwtAuthGuard)
     @Get(':address/stats')
     getUserStats(@Param('address') address: string) {
         return this.usersService.getUserStats(address);

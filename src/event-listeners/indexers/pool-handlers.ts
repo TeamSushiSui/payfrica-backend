@@ -20,30 +20,30 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
         switch (eventName) {
             case 'PoolCreatedEvent': {
                 const { pool_id, coin_decimal, coin_type } = data;
-                const shortName = coin_type.name.split('::').pop()!; 
+                const shortName = coin_type.name.split('::').pop()!;
                 const coinTypeName = `0x${coin_type.name}`;
-                
+
                 ops.push(
                     fetchMetadata(coinTypeName)
-                      .then(meta => prisma.tokens.upsert({
-                        where: { coinType: coinTypeName },
-                        create: {
-                          name:     meta.name,
-                          decimals: meta.decimals,
-                          symbol:   meta.symbol,
-                          coinType: coinTypeName,
-                        },
-                        update: {
-                          name:     meta.name,
-                          decimals: meta.decimals,
-                          symbol:   meta.symbol,
-                        },
-                      }))
-                      .catch(err => {
-                        console.error(`Failed to upsert token metadata for ${coinTypeName}:`, err);
-                        // swallow or rethrow depending on your needs
-                      })
-                  );
+                        .then(meta => prisma.tokens.upsert({
+                            where: { coinType: coinTypeName },
+                            create: {
+                                name: meta.name,
+                                decimals: meta.decimals,
+                                symbol: meta.symbol,
+                                coinType: coinTypeName,
+                            },
+                            update: {
+                                name: meta.name,
+                                decimals: meta.decimals,
+                                symbol: meta.symbol,
+                            },
+                        }))
+                        .catch(err => {
+                            console.error(`Failed to upsert token metadata for ${coinTypeName}:`, err);
+                            // swallow or rethrow depending on your needs
+                        })
+                );
 
                 ops.push(prisma.pool.upsert({
                     where: { id: pool_id },
@@ -64,6 +64,18 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                 break;
             }
 
+            case 'AddMintEvent': {
+                const { pool_id, coin_type, amount, coin_balance } = data;
+
+                ops.push(prisma.pool.update({
+                    where: { id: pool_id },
+                    data: {
+                        coinBalance: BigInt(coin_balance),
+                    },
+                }));
+                break;
+            }
+
             case 'AddedToLiquidityPoolEvent': {
                 const { pool_id, coin_type, amount, coin_balance } = data;
 
@@ -72,7 +84,7 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                     create: {
                         id: `${pool_id}-${coin_type}`,
                         poolId: pool_id,
-                        provider: '', // You may need to pass this from tx.sender or log separately
+                        provider: '', 
                         amount: BigInt(amount),
                         rewards: BigInt(0),
                     },

@@ -5,6 +5,6 @@ export const CONFIG = {
 	DEFAULT_LIMIT: 50,
 	NETWORK: (process.env.NETWORK as Network) || 'testnet',
 	RPC_URL: (process.env.RPC_URL as string) || 'https://fullnode.testnet.sui.io',
-    PACKAGE_ID: "0xbba86979fd7e9cd649c5a052879e79e2ac963cb306e1c7301437a8a022821695",
-	PAYF_RES_ID: "0xf4fbcdcf4954880575d99b43a4cab568b5fbaf0b9680cafb80b8bc8b0a149b92"
+    PACKAGE_ID: "0x07b9682e0b7705b3bda433366a2330b06352a551edb9b0e164c0cdc4ec3d6f92",
+	PAYF_RES_ID: "0x2c48df5380e2b4ae85a1115cdff64a05b09f593f723ab4de555602a40abd9114"
 };

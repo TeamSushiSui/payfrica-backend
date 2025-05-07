@@ -12,13 +12,13 @@ import axios from 'axios';
 
 export async function fetchMetadata(coinType: string) {
 	const response = await axios.post(CONFIG.RPC_URL, {
-	  jsonrpc: "2.0",
-	  id: 1,
-	  method: "suix_getCoinMetadata",
-	  params: [coinType],
+		jsonrpc: "2.0",
+		id: 1,
+		method: "suix_getCoinMetadata",
+		params: [coinType],
 	});
 	if (response.data.error) {
-	  throw new Error(response.data.error.message || 'Unknown RPC error');
+		throw new Error(response.data.error.message || 'Unknown RPC error');
 	}
 	return response.data.result;
-  }
+}

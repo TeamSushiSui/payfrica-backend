@@ -76,46 +76,43 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
 
             case 'ValidAgentTypeAddedEvent': {
                 const { agent_type } = data;
-                const fullType  = agent_type.name;                // e.g. "payfrica::agents::Foo"
-                const shortName = fullType.split('::').pop()!;    // "Foo"
-              
-                // single async IIFE so we can both upsert & update in one pass
+                const fullType = agent_type.name;             // e.g. "payfrica::agents::Foo"
+                const shortName = fullType.split('::').pop()!; // "Foo"
+                const mapping = { [shortName]: fullType };   // JSON object
+
                 ops.push((async () => {
-                  // see if we already have a document
-                  const rec = await prisma.payfricaAgents.findUnique({
-                    where: { id: PAYF_RES_ID },
-                    select: { validTypes: true },
-                  });
-              
-                  // build the new entry
-                  const mapping = { [shortName]: fullType };
-              
-                  if (!rec) {
-                    // first time — create with a single-element array
-                    await prisma.payfricaAgents.create({
-                      data: {
-                        id:         PAYF_RES_ID,
-                        validTypes: [JSON.stringify(mapping)],
-                        agents:     {}, 
-                      },
+                    // Fetch existing JSON array (if any)
+                    const rec = await prisma.payfricaAgents.findUnique({
+                        where: { id: PAYF_RES_ID },
+                        select: { validTypes: true },
                     });
-                  } else {
-                    // already exists — append if missing
-                    const arr = Array.isArray(rec.validTypes) ? rec.validTypes as any[] : [];
+                    const arr = Array.isArray(rec?.validTypes)
+                        ? (rec!.validTypes as any[])
+                        : [];
+
+                    // Only proceed if this mapping is not yet in the array
                     const exists = arr.some(o => o[shortName] === fullType);
                     if (!exists) {
-                      arr.push(mapping);
-                      await prisma.payfricaAgents.update({
-                        where: { id: PAYF_RES_ID },
-                        data:  { validTypes: arr },
-                      });
+                        arr.push(mapping);
+
+                        // Upsert will create if missing, or update the array if present
+                        await prisma.payfricaAgents.upsert({
+                            where: { id: PAYF_RES_ID },
+                            create: {
+                                id: PAYF_RES_ID,
+                                validTypes: [mapping],  // first‐time create
+                                agents: {},
+                            },
+                            update: {
+                                validTypes: arr,        // overwrite with the new array
+                            },
+                        });
                     }
-                  }
                 })());
-              
+
                 break;
-              }
-            
+            }
+
             case 'WithdrawalRequestEvent': {
                 const { request_id, agent_id, amount, user, coin_type, status, time } = data;
                 ops.push(prisma.withdrawRequest.upsert({
@@ -185,27 +182,46 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                 break;
             }
 
+
             case 'SetAgentWithdrawalLimitEvent': {
                 const { agent_id, min_withdraw_limit, max_withdraw_limit } = data;
-                ops.push(prisma.agent.update({
-                    where: { id: agent_id },
-                    data: {
-                        minWithdrawLimit: BigInt(min_withdraw_limit),
-                        maxWithdrawLimit: BigInt(max_withdraw_limit)
-                    }
-                }));
+                ops.push((async () => {
+                    // guard against missing agent
+                    const agent = await prisma.agent.findUnique({ where: { id: agent_id } });
+                    // if (!agent) {
+                    //     console.warn(`Skipping withdraw‐limit update: agent ${agent_id} not found.`);
+                    //     return;
+                    // }
+
+                    return prisma.agent.update({
+                        where: { id: agent_id },
+                        data: {
+                            minWithdrawLimit: BigInt(min_withdraw_limit),
+                            maxWithdrawLimit: BigInt(max_withdraw_limit),
+                        },
+                    });
+                })());
                 break;
             }
 
             case 'SetAgentDepositLimitEvent': {
                 const { agent_id, min_deposit_limit, max_deposit_limit } = data;
-                ops.push(prisma.agent.update({
-                    where: { id: agent_id },
-                    data: {
-                        minDepositLimit: BigInt(min_deposit_limit),
-                        maxDepositLimit: BigInt(max_deposit_limit)
-                    }
-                }));
+                ops.push((async () => {
+                    // guard against missing agent
+                    const agent = await prisma.agent.findUnique({ where: { id: agent_id } });
+                    // if (!agent) {
+                    //     console.warn(`Skipping deposit‐limit update: agent ${agent_id} not found.`);
+                    //     return;
+                    // }
+
+                    return prisma.agent.update({
+                        where: { id: agent_id },
+                        data: {
+                            minDepositLimit: BigInt(min_deposit_limit),
+                            maxDepositLimit: BigInt(max_deposit_limit),
+                        },
+                    });
+                })());
                 break;
             }
 
@@ -219,7 +235,6 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                 }));
                 break;
             }
-
 
             case 'AgentBalanceWithdrawEvent': {
                 const { agent_id, amount } = data;

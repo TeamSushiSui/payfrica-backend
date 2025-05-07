@@ -93,7 +93,7 @@ enum DepositStatus {
 
 model PayfricaAgents {
   id         String   @id @map("_id") // removed @db.ObjectId and @default(auto())
-  validTypes String[]
+  validTypes Json
   agents     Json
 }
 

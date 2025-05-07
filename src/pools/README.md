@@ -37,7 +37,6 @@ GET /pools
       "ratesDollar": 0.50,
       "createdAt": "2025-04-26T10:00:00Z"
     },
-    { /* ...other pools... */ }
   ]
   ```
 
