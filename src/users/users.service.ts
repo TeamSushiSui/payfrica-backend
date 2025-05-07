@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { User, Transaction } from '@prisma/client';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Country, AccountDetails } from '@prisma/client';
+import { Tokens } from '@prisma/client';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
@@ -163,25 +164,41 @@ export class UsersService {
 
   async findOne(
     address: string,
-  ): Promise<User & { country?: Country; accountDetails?: AccountDetails }> {
+  ): Promise<
+    User & {
+      country?: Country & { baseToken?: Tokens };
+      accountDetails?: AccountDetails;
+    }
+  > {
     const user = await this.prisma.user.findUnique({
       where: { address },
       include: {
-        country: true,
+        // include the country relation and, within it, the baseToken relation
+        country: {
+          include: {
+            baseToken: true,
+          },
+        },
         accountDetails: true,
       },
     });
+  
     if (!user) {
       throw new NotFoundException(`User with address ${address} not found.`);
     }
-
+  
     // Destructure out the relations
     const { country, accountDetails, ...rest } = user;
-
-    // Map null → undefined
+  
     return {
       ...rest,
-      country: country ?? undefined,
+      // map null → undefined for both relations
+      country: country
+        ? {
+            ...country,
+            baseToken: country.baseToken ?? undefined,
+          }
+        : undefined,
       accountDetails: accountDetails ?? undefined,
     };
   }

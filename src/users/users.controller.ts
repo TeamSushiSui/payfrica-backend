@@ -9,7 +9,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
   // @UseGuards(JwtAuthGuard)
-  @Get(':address')
+  @Get(':address/basic')
   findOne(@Param('address') address: string) {
     return this.usersService.findOrCreateUser(address);
   }
