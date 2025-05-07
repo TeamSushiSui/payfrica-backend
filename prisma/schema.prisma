@@ -44,7 +44,6 @@ model Tokens {
   decimals Int
   symbol   String
   coinType String @id @map("_id")
-
   Country Country[]
 }
 
