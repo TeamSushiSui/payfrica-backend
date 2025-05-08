@@ -6,6 +6,48 @@ const PAYF_RES_ID = CONFIG.PAYF_RES_ID;
 
 type Payload = Record<string, any>;
 
+type DepositStatus = "PENDING" | "COMPLETED" | "CANCELLED";
+type WithdrawStatus = "PENDING" | "COMPLETED" | "CANCELLED";
+
+function parseDepositStatus(raw: any): DepositStatus {
+    // if it’s wrapped in { variant, fields }
+    if (raw && typeof raw === "object" && "variant" in raw) {
+        return raw.variant.toUpperCase() as DepositStatus;
+    }
+    // if it’s already a string
+    return String(raw).toUpperCase() as DepositStatus;
+}
+
+function parseWithdrawStatus(raw: any): WithdrawStatus {
+    if (raw && typeof raw === "object" && "variant" in raw) {
+        return raw.variant.toUpperCase() as WithdrawStatus;
+    }
+    return String(raw).toUpperCase() as WithdrawStatus;
+}
+
+function parseEventTime(raw: unknown): Date | null {
+    // 1) pull out the raw value if it’s wrapped in an object
+    let tsVal: number | string;
+    if (raw && typeof raw === 'object' && 'value' in raw) {
+        // @ts-ignore
+        tsVal = (raw as any).value;
+    } else {
+        tsVal = raw as number | string;
+    }
+
+    // 2) coerce to a number
+    const n = typeof tsVal === 'string'
+        ? parseInt(tsVal, 10)
+        : (tsVal as number);
+
+    if (isNaN(n)) return null;
+
+    // 3) since this n is already milliseconds, use it directly
+    const d = new Date(n);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+
 export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string) => {
     const ops: Array<Promise<any>> = [];
 
@@ -114,7 +156,14 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
             }
 
             case 'WithdrawalRequestEvent': {
-                const { request_id, agent_id, amount, user, coin_type, status, time } = data;
+                const { request_id, agent_id, amount, user, coin_type, status: rawStatus, time: rawTime } = data;
+                const eventDate = parseEventTime(rawTime);
+                if (!eventDate) {
+                    console.error("Bad withdrawal time:", rawTime);
+                    break;
+                }
+                const statusEnum = parseWithdrawStatus(rawStatus);
+
                 ops.push(prisma.withdrawRequest.upsert({
                     where: { id: request_id },
                     create: {
@@ -123,61 +172,96 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                         user: user,
                         amount: BigInt(amount),
                         coinType: coin_type.name,
-                        status: status,
-                        requestTime: new Date(time),
+                        status: statusEnum,
+                        requestTime: eventDate,
                     },
                     update: {
-                        status: status,
-                        statusTime: new Date(time)
-                    }
+                        status: statusEnum,
+                        statusTime: eventDate,
+                    },
                 }));
                 break;
             }
 
             case 'WithdrawalApprovedEvent':
             case 'WithdrawalCancelledEvent': {
-                const { request_id, status, time } = data;
+                const { request_id, status: rawStatus, time: rawTime } = data;
+                const eventDate = parseEventTime(rawTime);
+                if (!eventDate) {
+                    console.error("Bad withdrawal time:", rawTime);
+                    break;
+                }
+                const statusEnum = parseWithdrawStatus(rawStatus);
+
                 ops.push(prisma.withdrawRequest.update({
                     where: { id: request_id },
                     data: {
-                        status,
-                        statusTime: new Date(time)
-                    }
+                        status: statusEnum,
+                        statusTime: eventDate,
+                    },
                 }));
                 break;
             }
 
             case 'DepositRequestEvent': {
-                const { request_id, agent_id, amount, user, coin_type, comment, status, time } = data;
-                ops.push(prisma.depositRequest.upsert({
-                    where: { id: request_id },
-                    create: {
-                        id: request_id,
-                        agentId: agent_id,
-                        user: user,
-                        amount: BigInt(amount),
-                        coinType: coin_type.name,
-                        comment,
-                        status: status,
-                        requestTime: new Date(time),
-                    },
-                    update: {
-                        status,
-                        statusTime: new Date(time)
-                    }
-                }));
+                const {
+                    request_id,
+                    agent_id,
+                    amount,
+                    user,
+                    coin_type,
+                    comment,
+                    status: rawStatus,
+                    time: rawTime
+                } = data;
+
+                const eventDate = parseEventTime(rawTime);   // from our previous helper
+                if (!eventDate) {
+                    console.error("Bad event time:", rawTime);
+                    break;
+                }
+
+                const statusEnum = parseDepositStatus(rawStatus);
+
+                ops.push(
+                    prisma.depositRequest.upsert({
+                        where: { id: request_id },
+                        create: {
+                            id: request_id,
+                            agentId: agent_id,
+                            user: user,
+                            amount: BigInt(amount),
+                            coinType: coin_type.name,
+                            comment: comment,
+                            status: statusEnum,      // ← now a string, e.g. "PENDING"
+                            requestTime: eventDate,
+                        },
+                        update: {
+                            status: statusEnum,      // ← also a string
+                            statusTime: eventDate,
+                        },
+                    })
+                );
                 break;
             }
 
+
             case 'DepositApprovedEvent':
             case 'DepositCancelledEvent': {
-                const { request_id, status, time } = data;
+                const { request_id, status: rawStatus, time: rawTime } = data;
+                const eventDate = parseEventTime(rawTime);
+                if (!eventDate) {
+                    console.error("Bad deposit time:", rawTime);
+                    break;
+                }
+                const statusEnum = parseDepositStatus(rawStatus);
+
                 ops.push(prisma.depositRequest.update({
                     where: { id: request_id },
                     data: {
-                        status,
-                        statusTime: new Date(time)
-                    }
+                        status: statusEnum,
+                        statusTime: eventDate,
+                    },
                 }));
                 break;
             }

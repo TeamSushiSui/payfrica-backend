@@ -35,6 +35,7 @@ export class AgentController {
     name: string;
     comment: string;
   }> {
+    // console.log(coinType, amount, "controller");
     const agent = await this.agentService.getBestDepositAgent(
       coinType,
       amount,

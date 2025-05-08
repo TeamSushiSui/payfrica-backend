@@ -30,6 +30,7 @@ function generateBankSafeComment(): string {
 export class AgentService {
     constructor(private readonly prisma: PrismaService, private usersService: UsersService) { }
     async getBestDepositAgent(coinType: string, amount: number): Promise<{ id: string, accountNumber: string, bank: string, name: string, comment: string } | null> {
+        console.log(coinType, amount);
         const agents = await this.prisma.agent.findMany({
             where: {
                 coinType: coinType
@@ -44,6 +45,7 @@ export class AgentService {
                 maxDepositLimit: true
             }
         });
+        // console.log(agents);
 
         const suitableAgent = agents.find(agent => {
             const hasEnoughBalance = agent.balance >= amount;
@@ -168,7 +170,7 @@ export class AgentService {
         if (!agentExists) {
             throw new NotFoundException(`Agent with id ${agentId} not found.`);
         }
-
+        
         // fetch both sides in parallel
         const [withdrawals, deposits] = await Promise.all([
             this.prisma.withdrawRequest.findMany({
@@ -198,7 +200,7 @@ export class AgentService {
     }
 
     async getRequestsByAddress(address: string): Promise<AgentTransaction[]> {
-        console.log(address)
+        // console.log(address)
         const agent = await this.prisma.agent.findFirst({
             where: { addr: address },
             select: { id: true },
