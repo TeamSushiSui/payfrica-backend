@@ -98,7 +98,7 @@ model PayfricaAgents {
 
 model Agent {
   id                               String   @id @map("_id")
-  addr                             String
+  addr                             String   
   balance                          BigInt
   coinType                         String
   accountNumber                    String

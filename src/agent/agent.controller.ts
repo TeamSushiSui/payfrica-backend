@@ -149,4 +149,11 @@ export class AgentController {
   ): Promise<AgentTransaction[]> {
     return this.agentService.getTransactionHistory(agentId);
   }
+
+  @Get('requests')
+  async getRequestsByAddress(
+    @Query('address') address: string,
+  ): Promise<AgentTransaction[]> {
+    return this.agentService.getRequestsByAddress(address);
+  }
 }

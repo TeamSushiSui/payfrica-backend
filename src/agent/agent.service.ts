@@ -196,4 +196,16 @@ export class AgentService {
             (a, b) => b.requestTime.getTime() - a.requestTime.getTime(),
         );
     }
+
+    async getRequestsByAddress(address: string): Promise<AgentTransaction[]> {
+        console.log(address)
+        const agent = await this.prisma.agent.findFirst({
+            where: { addr: address },
+            select: { id: true },
+        });
+        if (!agent) {
+            throw new NotFoundException(`Agent with address ${address} not found`);
+        }
+        return this.getTransactionHistory(agent.id);
+    }
 }

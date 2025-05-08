@@ -177,25 +177,44 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                 break;
             }
 
+            // case 'SwapCreatedEvent': {
+            //     const { pool_a_id, pool_b_id, input_coin_amount, output_coin_amount, coin_a_balance, coin_b_balance } = data;
+
+            //     ops.push(prisma.pool.update({
+            //         where: { id: pool_a_id },
+            //         data: {
+            //             coinBalance: BigInt(coin_a_balance),
+            //         },
+            //     }));
+
+            //     ops.push(prisma.pool.update({
+            //         where: { id: pool_b_id },
+            //         data: {
+            //             coinBalance: BigInt(coin_b_balance),
+            //         },
+            //     }));
+
+            //     break;
+            // }
             case 'SwapCreatedEvent': {
                 const { pool_a_id, pool_b_id, input_coin_amount, output_coin_amount, coin_a_balance, coin_b_balance } = data;
-
-                ops.push(prisma.pool.update({
-                    where: { id: pool_a_id },
-                    data: {
-                        coinBalance: BigInt(coin_a_balance),
-                    },
-                }));
-
-                ops.push(prisma.pool.update({
-                    where: { id: pool_b_id },
-                    data: {
-                        coinBalance: BigInt(coin_b_balance),
-                    },
-                }));
-
-                break;
-            }
+                const updates = [
+                  { id: pool_a_id, balance: BigInt(coin_a_balance) },
+                  { id: pool_b_id, balance: BigInt(coin_b_balance) },
+                ]
+                // sort by id to guarantee consistent locking order
+                updates.sort((a, b) => a.id.localeCompare(b.id))
+              
+                await prisma.$transaction(
+                  updates.map(u =>
+                    prisma.pool.update({
+                      where: { id: u.id },
+                      data: { coinBalance: u.balance },
+                    })
+                  )
+                )
+                break
+              }
 
             default:
                 break;
