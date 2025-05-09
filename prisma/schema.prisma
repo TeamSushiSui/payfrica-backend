@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -49,7 +50,7 @@ model Tokens {
 
 model Transaction {
   id             String            @id @default(cuid()) @map("_id")
-  transactionId  String            @unique
+  transactionId  String            
   type           TransactionType
   interactedWith String?
   date           DateTime          @default(now())
@@ -62,6 +63,9 @@ model Transaction {
 
   user   User   @relation(fields: [userId], references: [address])
   userId String
+
+  @@index([transactionId])
+  @@unique([transactionId, userId])
 }
 
 enum TransactionType {

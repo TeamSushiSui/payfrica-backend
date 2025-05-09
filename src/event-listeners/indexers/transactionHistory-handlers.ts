@@ -1,9 +1,10 @@
-// src/event-listeners/indexers/transaction-history.ts
+// src/event-listeners/indexers/transaction-history-handlers.ts
 
 import { SuiEvent } from '@mysten/sui/client';
 import { prisma } from '../../db';
 import { TransactionType, TransactionStatus } from '@prisma/client';
 
+// Shape of deposit/withdrawal events coming from bridge
 type BridgePayload = {
   request_id?: string;
   user: string;
@@ -17,6 +18,7 @@ export async function handleTransactionHistory(
   events: SuiEvent[],
   expectedPrefix: string
 ) {
+  // 1) Collect all user addresses
   const addrs = new Set<string>();
   for (const evt of events) {
     if (!evt.type.startsWith(expectedPrefix)) continue;
@@ -30,33 +32,33 @@ export async function handleTransactionHistory(
   // 2) Bulk-fetch users once
   const users = await prisma.user.findMany({
     where: { address: { in: Array.from(addrs) } },
-    select: {  address: true },
+    select: { address: true },
   });
   const idByAddress = new Map(users.map(u => [u.address, u.address]));
 
-  // 3) Process events
+  // 3) Build operations
   const ops: Array<Promise<any>> = [];
+
   for (const evt of events) {
     if (!evt.type.startsWith(expectedPrefix)) continue;
-
     const eventName = evt.type.split('::').pop()!;
     const data = evt.parsedJson as BridgePayload;
 
-    // timestamp (ms)
+    // Determine timestamp
     const tsMs = evt.timestampMs
       ? Number(evt.timestampMs)
       : Number(data.time) * 1000;
     const date = new Date(tsMs);
     if (isNaN(date.getTime())) {
-      throw new Error(
-        `Invalid timestamp for ${evt.id.txDigest}: ${data.time}`
-      );
+      throw new Error(`Invalid timestamp for ${evt.id.txDigest}: ${data.time}`);
     }
 
+    // Parse amount
     const amt = typeof data.amount === 'string'
       ? parseFloat(data.amount)
       : data.amount;
 
+    // Lookup userId
     const userId = idByAddress.get(data.user);
     if (!userId) {
       console.warn(`No user found for address ${data.user}, skipping.`);
@@ -65,69 +67,87 @@ export async function handleTransactionHistory(
 
     switch (eventName) {
       case 'DepositRequestEvent': {
-        ops.push(prisma.transaction.create({
-          data: {
-            transactionId:    data.request_id!,
-            userId,
-            type:             TransactionType.DEPOSIT,
-            status:           TransactionStatus.PENDING,
-            date,
-            incomingAsset:    data.coin_type.name,
-            incomingAmount:   amt,
-            outgoingAsset:    null,
-            outgoingAmount:   null,
-            fees:             0,
-          },
-        }));
+        // Only create if not already present
+        const exists = await prisma.transaction.findFirst({
+          where: { transactionId: data.request_id!, userId }
+        });
+        if (!exists) {
+          ops.push(prisma.transaction.create({
+            data: {
+              transactionId:  data.request_id!,
+              userId,
+              type:           TransactionType.DEPOSIT,
+              status:         TransactionStatus.PENDING,
+              date,
+              incomingAsset:  data.coin_type.name,
+              incomingAmount: amt,
+              outgoingAsset:  null,
+              outgoingAmount: null,
+              fees:           0,
+            }
+          }));
+        }
         break;
       }
 
       case 'DepositApprovedEvent': {
-        ops.push(prisma.transaction.update({
-          where: { transactionId: data.request_id! },
-          data:  { status: TransactionStatus.SUCCESS },
+        // Update existing deposit record
+        ops.push(prisma.transaction.updateMany({
+          where: {
+            transactionId: data.request_id!,
+            userId,
+          },
+          data: { status: TransactionStatus.SUCCESS }
         }));
         break;
       }
 
       case 'DepositCancelledEvent': {
-        ops.push(prisma.transaction.update({
-          where: { transactionId: data.request_id! },
-          data:  { status: TransactionStatus.FAILED },
+        ops.push(prisma.transaction.updateMany({
+          where: {
+            transactionId: data.request_id!,
+            userId,
+          },
+          data: { status: TransactionStatus.FAILED }
         }));
         break;
       }
 
       case 'WithdrawalRequestEvent': {
-        ops.push(prisma.transaction.create({
-          data: {
-            transactionId:    data.request_id!,
-            userId,
-            type:             TransactionType.WITHDRAW,
-            status:           TransactionStatus.PENDING,
-            date,
-            incomingAsset:    null,
-            incomingAmount:   null,
-            outgoingAsset:    data.coin_type.name,
-            outgoingAmount:   amt,
-            fees:             0,
-          },
-        }));
+        const exists = await prisma.transaction.findFirst({
+          where: { transactionId: data.request_id!, userId }
+        });
+        if (!exists) {
+          ops.push(prisma.transaction.create({
+            data: {
+              transactionId:  data.request_id!,
+              userId,
+              type:           TransactionType.WITHDRAW,
+              status:         TransactionStatus.PENDING,
+              date,
+              incomingAsset:  null,
+              incomingAmount: null,
+              outgoingAsset:  data.coin_type.name,
+              outgoingAmount: amt,
+              fees:           0,
+            }
+          }));
+        }
         break;
       }
 
       case 'WithdrawalApprovedEvent': {
-        ops.push(prisma.transaction.update({
-          where: { transactionId: data.request_id! },
-          data:  { status: TransactionStatus.SUCCESS },
+        ops.push(prisma.transaction.updateMany({
+          where: { transactionId: data.request_id!, userId },
+          data: { status: TransactionStatus.SUCCESS }
         }));
         break;
       }
 
       case 'WithdrawalCancelledEvent': {
-        ops.push(prisma.transaction.update({
-          where: { transactionId: data.request_id! },
-          data:  { status: TransactionStatus.FAILED },
+        ops.push(prisma.transaction.updateMany({
+          where: { transactionId: data.request_id!, userId },
+          data: { status: TransactionStatus.FAILED }
         }));
         break;
       }
@@ -137,5 +157,6 @@ export async function handleTransactionHistory(
     }
   }
 
+  // 4) Execute all operations in parallel
   await Promise.all(ops);
 }

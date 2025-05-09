@@ -1,9 +1,11 @@
 // src/event-listeners/indexers/send-handlers.ts
 
-import { PrismaClient, TransactionType, TransactionStatus } from '@prisma/client';
+import { TransactionType, TransactionStatus } from '@prisma/client';
 import { SuiEvent } from '@mysten/sui/client';
 import { prisma } from '../../db';
+import { getNsAddress } from 'sui-utils';
 
+// Define the shape of a coin transfer event
 type CoinEvent = {
   coin_type: { name: string };
   amount: number | string;
@@ -37,68 +39,85 @@ export async function handleSend(events: SuiEvent[], expectedType: string) {
     const assetName = parts[parts.length - 1];
 
     // 4) Core fields
-    const transactionId    = event.id.txDigest;
-    const senderAddress    = data.sender;
-    const recipientAddress = data.recipient;
+    const transactionId = event.id.txDigest;
+    const senderAddress = data.sender;
+    let recipient = data.recipient;
+    let recipientAddress = recipient;
+    if (recipient.includes('.sui')) {
+      const parts = recipient.split(".");
+      recipient = `${parts[0]}@${parts[1]}`; 
+      const resolvedRecipient = await getNsAddress(recipient);
+      recipientAddress = resolvedRecipient ?? recipientAddress;
+    }
+
 
     // 5) Bulk‐fetch both users
-    const users = await this.prisma.user.findMany({
-      where: {
-        address: { in: [senderAddress, recipientAddress] },
-      },
-      select: {
-        address: true,
-      },
+    const users = await prisma.user.findMany({
+      where: { address: { in: [senderAddress, recipientAddress] } },
+      select: { address: true },
     });
-    
-    // since address is the primary key, map it to itself
-    const idByAddress = new Map<string, string>(
-      users.map(u => [u.address, u.address])
-    );
-    // 6) If neither exist, skip the event entirely
+
+    const idByAddress = new Map(users.map(u => [u.address, u.address]));
+
+    // 6) If neither user exists, skip event
     if (!idByAddress.has(senderAddress) && !idByAddress.has(recipientAddress)) {
-      console.warn(`No users found for tx ${transactionId}, skipping.`);
+      console.warn(`No users for tx ${transactionId}, skipping.`);
       continue;
     }
 
-    // 7) Write sender’s SEND record (only if they exist)
+    // 7) Create SEND record only if it doesn't exist
     const senderId = idByAddress.get(senderAddress);
     if (senderId) {
-      await prisma.transaction.create({
-        data: {
-          userId:         senderId,
-          transactionId,
-          type:           TransactionType.SEND,
-          interactedWith: recipientAddress,
-          date,
-          status:         TransactionStatus.SUCCESS,
-          fees:           0,
-          incomingAsset:  null,
-          incomingAmount: null,
-          outgoingAsset:  assetName,
-          outgoingAmount: amountNum,
-        },
+      const sendExists = await prisma.transaction.findFirst({
+        where: { transactionId, userId: senderId }
       });
+      if (!sendExists) {
+        await prisma.transaction.create({
+          data: {
+            userId:         senderId,
+            transactionId,
+            type:           TransactionType.SEND,
+            interactedWith: recipient,
+            date,
+            status:         TransactionStatus.SUCCESS,
+            fees:           0,
+            incomingAsset:  null,
+            incomingAmount: null,
+            outgoingAsset:  assetName,
+            outgoingAmount: amountNum,
+          },
+        });
+      }
     }
 
-    // 8) Write receiver’s RECEIVE record (only if they exist)
+    const senderDetails = await prisma.user.findUnique({
+      where: { address: senderAddress }
+    });
+    const senderUsername = senderDetails?.username;
+
+    // 8) Create RECEIVE record only if it doesn't exist
     const receiverId = idByAddress.get(recipientAddress);
     if (receiverId) {
-      await prisma.transaction.create({
-        data: {
-          userId:         receiverId,
-          transactionId,
-          type:           TransactionType.RECEIVE,
-          interactedWith: senderAddress,
-          date,
-          status:         TransactionStatus.SUCCESS,
-          fees:           0,
-          incomingAsset:  assetName,
-          incomingAmount: amountNum,
-          outgoingAsset:  null,
-          outgoingAmount: null,
-        },
+      const receiveExists = await prisma.transaction.findFirst({
+        where: { transactionId, userId: receiverId }
       });
+      if (!receiveExists) {
+        await prisma.transaction.create({
+          data: {
+            userId:         receiverId,
+            transactionId,
+            type:           TransactionType.RECEIVE,
+            interactedWith: senderUsername ? senderUsername + "@payfrica": senderAddress,
+            date,
+            status:         TransactionStatus.SUCCESS,
+            fees:           0,
+            incomingAsset:  assetName,
+            incomingAmount: amountNum,
+            outgoingAsset:  null,
+            outgoingAmount: null,
+          },
+        });
+      }
     }
   }
 }

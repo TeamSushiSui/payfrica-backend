@@ -1,6 +1,6 @@
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
-import { CONFIG } from './config';
-export type Network = 'mainnet' | 'testnet' | 'devnet' | 'localnet';
+import { CONFIG, suinsClient } from './config';
+export type Network = 'mainnet' | 'testnet';
 
 export const ACTIVE_NETWORK = (process.env.NETWORK as Network) || 'testnet';
 
@@ -21,4 +21,8 @@ export async function fetchMetadata(coinType: string) {
 		throw new Error(response.data.error.message || 'Unknown RPC error');
 	}
 	return response.data.result;
+}
+
+export async function getNsAddress(name: string): Promise<string | null> {
+    return (await suinsClient.getNameRecord(name))?.targetAddress || null;
 }
