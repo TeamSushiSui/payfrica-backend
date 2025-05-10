@@ -3,6 +3,7 @@ import { TransactionType, TransactionStatus } from "@prisma/client";
 import { SuiEvent } from '@mysten/sui/client';
 import { prisma } from '../../db';
 import { getNsAddress } from 'sui-utils';
+import { fetchMetadata } from "sui-utils";
 
 // Define the shape of a coin transfer event
 type CoinEvent = {
@@ -36,6 +37,8 @@ export async function handleSend(events: SuiEvent[], expectedType: string) {
     // 3) Asset short name
     const parts = data.coin_type.name.split('::');
     const assetName = parts[parts.length - 1];
+    const coinMeta = await fetchMetadata("0x"+data.coin_type.name);
+    const decimal = Number(coinMeta.decimals) || 0;
 
     // 4) Core fields
     const transactionId = event.id.txDigest;
@@ -83,7 +86,7 @@ export async function handleSend(events: SuiEvent[], expectedType: string) {
             incomingAsset:  null,
             incomingAmount: null,
             outgoingAsset:  assetName,
-            outgoingAmount: amountNum,
+            outgoingAmount: amountNum / Math.pow(10, decimal),
           },
         });
       }
@@ -111,7 +114,7 @@ export async function handleSend(events: SuiEvent[], expectedType: string) {
             status:         TransactionStatus.SUCCESS,
             fees:           0,
             incomingAsset:  assetName,
-            incomingAmount: amountNum,
+            incomingAmount: amountNum / Math.pow(10, decimal),
             outgoingAsset:  null,
             outgoingAmount: null,
           },
