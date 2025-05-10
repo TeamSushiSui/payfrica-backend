@@ -3,6 +3,8 @@
 import { SuiEvent } from '@mysten/sui/client';
 import { prisma } from '../../db';
 import { TransactionType, TransactionStatus } from "@prisma/client";
+import { fetchMetadata } from "sui-utils";
+
 
 // Shape of deposit/withdrawal events coming from bridge
 type BridgePayload = {
@@ -43,7 +45,6 @@ export async function handleTransactionHistory(
     if (!evt.type.startsWith(expectedPrefix)) continue;
     const eventName = evt.type.split('::').pop()!;
     const data = evt.parsedJson as BridgePayload;
-
     // Determine timestamp
     const tsMs = evt.timestampMs
       ? Number(evt.timestampMs)
@@ -67,6 +68,10 @@ export async function handleTransactionHistory(
 
     switch (eventName) {
       case 'DepositRequestEvent': {
+        const parts = data.coin_type.name.split('::');
+        const assetName = parts[parts.length - 1];
+        const coinMeta = await fetchMetadata("0x" + data.coin_type.name);
+        const decimal = Number(coinMeta.decimals) || 0;
         // Only create if not already present
         const exists = await prisma.transaction.findFirst({
           where: { transactionId: data.request_id!, userId }
@@ -74,16 +79,16 @@ export async function handleTransactionHistory(
         if (!exists) {
           ops.push(prisma.transaction.create({
             data: {
-              transactionId:  data.request_id!,
+              transactionId: data.request_id!,
               userId,
-              type:           TransactionType.DEPOSIT,
-              status:         TransactionStatus.PENDING,
+              type: TransactionType.DEPOSIT,
+              status: TransactionStatus.PENDING,
               date,
-              incomingAsset:  data.coin_type.name,
-              incomingAmount: amt,
-              outgoingAsset:  null,
+              incomingAsset: assetName,
+              incomingAmount: amt / Math.pow(10, decimal),
+              outgoingAsset: null,
               outgoingAmount: null,
-              fees:           0,
+              fees: 0,
             }
           }));
         }
@@ -114,22 +119,26 @@ export async function handleTransactionHistory(
       }
 
       case 'WithdrawalRequestEvent': {
+        const parts = data.coin_type.name.split('::');
+        const assetName = parts[parts.length - 1];
+        const coinMeta = await fetchMetadata("0x" + data.coin_type.name);
+        const decimal = Number(coinMeta.decimals) || 0;
         const exists = await prisma.transaction.findFirst({
           where: { transactionId: data.request_id!, userId }
         });
         if (!exists) {
           ops.push(prisma.transaction.create({
             data: {
-              transactionId:  data.request_id!,
+              transactionId: data.request_id!,
               userId,
-              type:           TransactionType.WITHDRAW,
-              status:         TransactionStatus.PENDING,
+              type: TransactionType.WITHDRAW,
+              status: TransactionStatus.PENDING,
               date,
-              incomingAsset:  null,
+              incomingAsset: null,
               incomingAmount: null,
-              outgoingAsset:  data.coin_type.name,
-              outgoingAmount: amt,
-              fees:           0,
+              outgoingAsset: assetName,
+              outgoingAmount: amt / Math.pow(10, decimal),
+              fees: 0,
             }
           }));
         }
