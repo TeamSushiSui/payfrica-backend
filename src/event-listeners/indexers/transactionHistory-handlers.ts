@@ -2,7 +2,7 @@
 
 import { SuiEvent } from '@mysten/sui/client';
 import { prisma } from '../../db';
-import { TransactionType, TransactionStatus } from '@prisma/client';
+import { TransactionType, TransactionStatus } from "@prisma/client";
 
 // Shape of deposit/withdrawal events coming from bridge
 type BridgePayload = {

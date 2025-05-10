@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Get } from '@nestjs/common';
 import { CreateCountryDto } from './dto/create-country.dto';
-import { Country } from '@prisma/client';
+import { Country } from "@prisma/client";
 import { AdminService } from './admin.service';
 
 @Controller('admin')

@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -44,13 +44,13 @@ model Tokens {
   name     String
   decimals Int
   symbol   String
-  coinType String @id @map("_id")
-  Country Country[]
+  coinType String    @id @map("_id")
+  Country  Country[]
 }
 
 model Transaction {
   id             String            @id @default(cuid()) @map("_id")
-  transactionId  String            
+  transactionId  String
   type           TransactionType
   interactedWith String?
   date           DateTime          @default(now())
@@ -64,8 +64,8 @@ model Transaction {
   user   User   @relation(fields: [userId], references: [address])
   userId String
 
-  @@index([transactionId])
   @@unique([transactionId, userId])
+  @@index([transactionId])
 }
 
 enum TransactionType {
@@ -95,14 +95,14 @@ enum DepositStatus {
 }
 
 model PayfricaAgents {
-  id         String   @id @map("_id") // removed @db.ObjectId and @default(auto())
+  id         String @id @map("_id") // removed @db.ObjectId and @default(auto())
   validTypes Json
   agents     Json
 }
 
 model Agent {
   id                               String   @id @map("_id")
-  addr                             String   
+  addr                             String
   balance                          BigInt
   coinType                         String
   accountNumber                    String

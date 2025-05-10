@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { AgentService } from './agent.service';
 import { UpdateAccountDto } from './dto/update-account.dto';
-import { WithdrawRequest, DepositRequest } from '@prisma/client';
+import { WithdrawRequest, DepositRequest } from "@prisma/client";
 
 type AgentTransaction =
   | (WithdrawRequest & { type: 'withdrawal' })

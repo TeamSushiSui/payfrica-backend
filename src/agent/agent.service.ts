@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../src/prisma/prisma.service';
-import { WithdrawRequest, DepositRequest, Agent } from '@prisma/client';
+import { WithdrawRequest, DepositRequest, Agent } from "@prisma/client";
 import { UsersService } from '../../src/users/users.service';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { CONFIG } from 'config';
@@ -170,7 +170,7 @@ export class AgentService {
         if (!agentExists) {
             throw new NotFoundException(`Agent with id ${agentId} not found.`);
         }
-        
+
         // fetch both sides in parallel
         const [withdrawals, deposits] = await Promise.all([
             this.prisma.withdrawRequest.findMany({

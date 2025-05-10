@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { Country } from '@prisma/client';
+import { Country } from "@prisma/client";
 
 @Injectable()
 export class AdminService {

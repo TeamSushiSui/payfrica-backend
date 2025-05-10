@@ -1,6 +1,5 @@
 // src/event-listeners/indexers/send-handlers.ts
-
-import { TransactionType, TransactionStatus } from '@prisma/client';
+import { TransactionType, TransactionStatus } from "@prisma/client";
 import { SuiEvent } from '@mysten/sui/client';
 import { prisma } from '../../db';
 import { getNsAddress } from 'sui-utils';

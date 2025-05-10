@@ -4,7 +4,7 @@ import {
   Pool,
   LiquidityProvider,
   SwapFee,
-} from '@prisma/client';
+} from "@prisma/client";
 
 @Controller('pools')
 export class PoolsController {
