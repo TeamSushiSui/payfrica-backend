@@ -157,4 +157,15 @@ export class AgentController {
   ): Promise<AgentTransaction[]> {
     return this.agentService.getRequestsByAddress(address);
   }
+
+  @Get('agent')
+  async getAgentByAddress(
+    @Query('address') address: string,
+  ): Promise<{ id: string }> {
+    const agent = await this.agentService.getAgentByAddress(address);
+    if (!agent) {
+      throw new NotFoundException(`Agent with address ${address} not found`);
+    }
+    return agent;
+  }
 }

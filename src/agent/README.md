@@ -58,8 +58,6 @@ Base path: `/agent`
 { "id": "w4x5y6z7" }
 ```
 
----
-
 ## 3. Get Agent Account Details
 
 * **Endpoint**: `GET /account-details`

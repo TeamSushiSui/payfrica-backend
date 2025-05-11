@@ -210,4 +210,11 @@ export class AgentService {
         }
         return this.getTransactionHistory(agent.id);
     }
+
+    async getAgentByAddress(address: string){
+        const agent = await this.prisma.agent.findFirst({
+            where: { addr: address },
+        });
+        return agent;
+    }
 }
