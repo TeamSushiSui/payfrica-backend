@@ -45,14 +45,14 @@ export class AgentService {
                 maxDepositLimit: true
             }
         });
-        const decimals = 6;
         // console.log(agents);
+        const decimals = 6;
         const amt = amount/10**decimals;
 
         const suitableAgent = agents.find(agent => {
-            const hasEnoughBalance = agent.balance >= amount;
-            const withinMinLimit = amount >= agent.minDepositLimit;
-            const withinMaxLimit = amount <= Number(agent.maxDepositLimit) || agent.maxDepositLimit === BigInt(0);
+            const hasEnoughBalance = agent.balance >= amt;
+            const withinMinLimit = amt >= agent.minDepositLimit;
+            const withinMaxLimit = amt <= Number(agent.maxDepositLimit) || agent.maxDepositLimit === BigInt(0);
             return hasEnoughBalance && withinMinLimit && withinMaxLimit;
         });
 
@@ -84,10 +84,12 @@ export class AgentService {
             }
         });
 
+        const decimals = 6;
+        const amt = amount/10**decimals;
         const suitableAgent = agents.find(agent => {
-            const hasEnoughBalance = agent.balance >= amount;
-            const withinMinLimit = amount >= agent.minWithdrawLimit;
-            const withinMaxLimit = amount <= Number(agent.maxWithdrawLimit) || agent.maxWithdrawLimit === BigInt(0);
+            const hasEnoughBalance = agent.balance >= amt;
+            const withinMinLimit = amt >= agent.minWithdrawLimit;
+            const withinMaxLimit = amt <= Number(agent.maxWithdrawLimit) || agent.maxWithdrawLimit === BigInt(0);
             return hasEnoughBalance && withinMinLimit && withinMaxLimit;
         });
 

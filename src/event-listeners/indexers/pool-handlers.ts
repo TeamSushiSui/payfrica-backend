@@ -225,8 +225,8 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
 
                     // fetch on‐chain decimals
                     const [metaA, metaB] = await Promise.all([
-                        fetchMetadata("0x" + poolA!.coinType),
-                        fetchMetadata("0x" + poolB!.coinType),
+                        fetchMetadata(poolA!.coinType),
+                        fetchMetadata(poolB!.coinType),
                     ]);
                     const decA = Number(metaA.decimals) || 0;
                     const decB = Number(metaB.decimals) || 0;
