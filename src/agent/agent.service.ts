@@ -30,7 +30,7 @@ function generateBankSafeComment(): string {
 export class AgentService {
     constructor(private readonly prisma: PrismaService, private usersService: UsersService) { }
     async getBestDepositAgent(coinType: string, amount: number): Promise<{ id: string, accountNumber: string, bank: string, name: string, comment: string } | null> {
-        console.log(coinType, amount);
+        // console.log(coinType, amount);
         const agents = await this.prisma.agent.findMany({
             where: {
                 coinType: coinType
@@ -45,7 +45,9 @@ export class AgentService {
                 maxDepositLimit: true
             }
         });
+        const decimals = 6;
         // console.log(agents);
+        const amt = amount/10**decimals;
 
         const suitableAgent = agents.find(agent => {
             const hasEnoughBalance = agent.balance >= amount;

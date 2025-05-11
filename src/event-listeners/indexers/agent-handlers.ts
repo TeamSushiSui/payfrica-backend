@@ -47,7 +47,7 @@ function parseEventTime(raw: unknown): Date | null {
     return isNaN(d.getTime()) ? null : d;
 }
 
-
+const coin_decimal = 6
 export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string) => {
     const ops: Array<Promise<any>> = [];
 
@@ -177,8 +177,8 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     where: { id: request_id },
                     select: { id: true },
                 });
-
-                // 2) only create if not found
+                const coin_decimal = 6;
+                
                 if (!exists) {
                     ops.push(
                         prisma.withdrawRequest.create({
@@ -186,7 +186,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                                 id: request_id,
                                 agentId: agent_id,
                                 user: user,
-                                amount: BigInt(amount),
+                                amount: BigInt(amount) / BigInt(10 ** coin_decimal),
                                 coinType: coin_type.name,
                                 status: statusEnum,
                                 requestTime: eventDate,
@@ -240,7 +240,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     where: { id: request_id },
                     select: { id: true },
                 });
-
+                const coin_decimal = 6;
                 if (!exists) {
                     ops.push(
                         prisma.depositRequest.create({
@@ -248,7 +248,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                                 id: request_id,
                                 agentId: agent_id,
                                 user: user,
-                                amount: BigInt(amount),
+                                amount: BigInt(amount) / BigInt(10 ** coin_decimal),
                                 coinType: coin_type.name,
                                 comment: comment,
                                 status: statusEnum,
@@ -294,8 +294,8 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     return prisma.agent.update({
                         where: { id: agent_id },
                         data: {
-                            minWithdrawLimit: BigInt(min_withdraw_limit),
-                            maxWithdrawLimit: BigInt(max_withdraw_limit),
+                            minWithdrawLimit: BigInt(min_withdraw_limit)/BigInt(10 ** coin_decimal),
+                            maxWithdrawLimit: BigInt(max_withdraw_limit)/BigInt(10 ** coin_decimal),
                         },
                     });
                 })());
@@ -315,8 +315,8 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     return prisma.agent.update({
                         where: { id: agent_id },
                         data: {
-                            minDepositLimit: BigInt(min_deposit_limit),
-                            maxDepositLimit: BigInt(max_deposit_limit),
+                            minDepositLimit: BigInt(min_deposit_limit)/BigInt(10 ** coin_decimal),
+                            maxDepositLimit: BigInt(max_deposit_limit)/BigInt(10 ** coin_decimal),
                         },
                     });
                 })());
@@ -328,7 +328,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                 ops.push(prisma.agent.update({
                     where: { id: agent_id },
                     data: {
-                        balance: { increment: BigInt(amount) }
+                        balance: { increment: BigInt(amount) / BigInt(10 ** coin_decimal) }
                     }
                 }));
                 break;
@@ -339,7 +339,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                 ops.push(prisma.agent.update({
                     where: { id: agent_id },
                     data: {
-                        balance: { decrement: BigInt(amount) }
+                        balance: { decrement: BigInt(amount) / BigInt(10 ** coin_decimal) }
                     }
                 }));
                 break;

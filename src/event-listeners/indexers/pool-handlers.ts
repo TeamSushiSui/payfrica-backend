@@ -1,8 +1,31 @@
 import { SuiEvent } from '@mysten/sui/client';
 import { prisma } from '../../db';
 import { fetchMetadata } from 'sui-utils';
+import { TransactionStatus, TransactionType } from '@prisma/client';
 
 type Payload = Record<string, any>;
+
+function parseEventTime(raw: unknown): Date | null {
+    // 1) pull out the raw value if it’s wrapped in an object
+    let tsVal: number | string;
+    if (raw && typeof raw === 'object' && 'value' in raw) {
+        // @ts-ignore
+        tsVal = (raw as any).value;
+    } else {
+        tsVal = raw as number | string;
+    }
+
+    // 2) coerce to a number
+    const n = typeof tsVal === 'string'
+        ? parseInt(tsVal, 10)
+        : (tsVal as number);
+
+    if (isNaN(n)) return null;
+
+    // 3) since this n is already milliseconds, use it directly
+    const d = new Date(n);
+    return isNaN(d.getTime()) ? null : d;
+}
 
 export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) => {
     const ops: Array<Promise<any>> = [];
@@ -84,7 +107,7 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                     create: {
                         id: `${pool_id}-${coin_type}`,
                         poolId: pool_id,
-                        provider: '', 
+                        provider: '',
                         amount: BigInt(amount),
                         rewards: BigInt(0),
                     },
@@ -179,6 +202,52 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
 
             case 'SwapCreatedEvent': {
                 const { pool_a_id, pool_b_id, input_coin_amount, output_coin_amount, coin_a_balance, coin_b_balance } = data;
+                const transaction_id = evt.id.txDigest;
+
+                const date = parseEventTime(evt.timestampMs);
+                if (!date) {
+                    console.error("Bad swap time:", evt.timestampMs);
+                    break;
+                }
+                const txExists = await prisma.transaction.findFirst({
+                    where: { transactionId: transaction_id }
+                });
+                if (!txExists) {
+
+                    const [poolA, poolB] = await Promise.all([
+                        prisma.pool.findUnique({ where: { id: pool_a_id }, select: { coinType: true } }),
+                        prisma.pool.findUnique({ where: { id: pool_b_id }, select: { coinType: true } }),
+                    ]);
+
+                    // derive the symbol (e.g. "USDC" out of "0x123::USDC::USDC")
+                    const symbolA = poolA!.coinType.split('::').pop()!;
+                    const symbolB = poolB!.coinType.split('::').pop()!;
+
+                    // fetch on‐chain decimals
+                    const [metaA, metaB] = await Promise.all([
+                        fetchMetadata("0x" + poolA!.coinType),
+                        fetchMetadata("0x" + poolB!.coinType),
+                    ]);
+                    const decA = Number(metaA.decimals) || 0;
+                    const decB = Number(metaB.decimals) || 0;
+                    ops.push(
+                        prisma.transaction.create({
+                            data: {
+                                transactionId: transaction_id,
+                                userId: evt.sender,
+                                type: TransactionType.SWAP,
+                                interactedWith: "Swap Pool",
+                                status: TransactionStatus.SUCCESS,
+                                date,
+                                incomingAsset: symbolA,
+                                incomingAmount: Number(input_coin_amount) / Math.pow(10, decA),
+                                outgoingAsset: symbolB,
+                                outgoingAmount: Number(output_coin_amount) / Math.pow(10, decB),
+                                fees: 0,
+                            }
+                        })
+                    );
+                }
 
                 ops.push(prisma.pool.update({
                     where: { id: pool_a_id },
@@ -193,19 +262,6 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                         coinBalance: BigInt(coin_b_balance),
                     },
                 }));
-                console.log(evt.sender)
-                // ops.push(prisma.transaction.create({
-                //     data: {
-                //         transactionId: evt.id.txDigest,
-                //         eventType: eventName,
-                //         poolAId: pool_a_id,
-                //         poolBId: pool_b_id,
-                //         inputCoinAmount: BigInt(input_coin_amount),
-                //         outputCoinAmount: BigInt(output_coin_amount),
-                //         timestamp: new Date(),
-                //     }
-                // }))
-
                 break;
             }
 
