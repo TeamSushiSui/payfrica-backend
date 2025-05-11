@@ -180,13 +180,15 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                 const coin_decimal = 6;
                 
                 if (!exists) {
+                    const amt = BigInt(amount) / BigInt(10 ** coin_decimal);
+
                     ops.push(
                         prisma.withdrawRequest.create({
                             data: {
                                 id: request_id,
                                 agentId: agent_id,
                                 user: user,
-                                amount: BigInt(amount) / BigInt(10 ** coin_decimal),
+                                amount: amt,
                                 coinType: coin_type.name,
                                 status: statusEnum,
                                 requestTime: eventDate,
@@ -240,15 +242,15 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     where: { id: request_id },
                     select: { id: true },
                 });
-                const coin_decimal = 6;
                 if (!exists) {
+                    const amt = BigInt(amount) / BigInt(10 ** coin_decimal);
                     ops.push(
                         prisma.depositRequest.create({
                             data: {
                                 id: request_id,
                                 agentId: agent_id,
                                 user: user,
-                                amount: BigInt(amount) / BigInt(10 ** coin_decimal),
+                                amount: amt,
                                 coinType: coin_type.name,
                                 comment: comment,
                                 status: statusEnum,

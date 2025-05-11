@@ -72,10 +72,12 @@ export async function handleTransactionHistory(
 
     switch (eventName) {
       case 'DepositRequestEvent': {
-        const parts = data.coin_type.name.split('::');
-        const assetName = parts[parts.length - 1];
+        // const parts = data.coin_type.name.split('::');
+        const assetName = data.coin_type.name.split('::').pop()!;
         const coinMeta = await fetchMetadata("0x" + data.coin_type.name);
+        
         const decimal = Number(coinMeta.decimals) || 0;
+        const amount = amt / Math.pow(10, decimal)
         // Only create if not already present
         const exists = await prisma.transaction.findFirst({
           where: { transactionId: data.request_id! , userId }
@@ -90,7 +92,7 @@ export async function handleTransactionHistory(
               status: TransactionStatus.PENDING,
               date,
               incomingAsset: assetName,
-              incomingAmount: amt / Math.pow(10, decimal),
+              incomingAmount: amount,
               outgoingAsset: null,
               outgoingAmount: null,
               fees: 0,
