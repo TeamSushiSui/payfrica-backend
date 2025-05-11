@@ -29,6 +29,8 @@ export async function handleTransactionHistory(
       const data = evt.parsedJson as BridgePayload;
       addrs.add(data.user);
     }
+
+    
   }
 
   // 2) Bulk-fetch users once
@@ -43,9 +45,11 @@ export async function handleTransactionHistory(
 
   for (const evt of events) {
     if (!evt.type.startsWith(expectedPrefix)) continue;
+    // const transactionId = evt.id.txDigest;
+
     const eventName = evt.type.split('::').pop()!;
     const data = evt.parsedJson as BridgePayload;
-    // Determine timestamp
+    // Determine timestamp  
     const tsMs = evt.timestampMs
       ? Number(evt.timestampMs)
       : Number(data.time) * 1000;
@@ -74,7 +78,7 @@ export async function handleTransactionHistory(
         const decimal = Number(coinMeta.decimals) || 0;
         // Only create if not already present
         const exists = await prisma.transaction.findFirst({
-          where: { transactionId: data.request_id!, userId }
+          where: { transactionId: data.request_id! , userId }
         });
         if (!exists) {
           ops.push(prisma.transaction.create({
@@ -82,6 +86,7 @@ export async function handleTransactionHistory(
               transactionId: data.request_id!,
               userId,
               type: TransactionType.DEPOSIT,
+              interactedWith: "payfrica Agent", 
               status: TransactionStatus.PENDING,
               date,
               incomingAsset: assetName,
@@ -132,6 +137,7 @@ export async function handleTransactionHistory(
               transactionId: data.request_id!,
               userId,
               type: TransactionType.WITHDRAW,
+              interactedWith: "payfrica Agent",
               status: TransactionStatus.PENDING,
               date,
               incomingAsset: null,
