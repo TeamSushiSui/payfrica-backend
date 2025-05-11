@@ -29,6 +29,9 @@ function generateBankSafeComment(): string {
 @Injectable()
 export class AgentService {
     constructor(private readonly prisma: PrismaService, private usersService: UsersService) { }
+    async getAllAgents(): Promise<Agent[]> {
+        return this.prisma.agent.findMany();
+    }
     async getBestDepositAgent(coinType: string, amount: number): Promise<{ id: string, accountNumber: string, bank: string, name: string, comment: string } | null> {
         // console.log(coinType, amount);
         const agents = await this.prisma.agent.findMany({
@@ -47,7 +50,7 @@ export class AgentService {
         });
         // console.log(agents);
         const decimals = 6;
-        const amt = amount/10**decimals;
+        const amt = amount / 10 ** decimals;
 
         const suitableAgent = agents.find(agent => {
             const hasEnoughBalance = agent.balance >= amt;
@@ -85,7 +88,7 @@ export class AgentService {
         });
 
         const decimals = 6;
-        const amt = amount/10**decimals;
+        const amt = amount / 10 ** decimals;
         const suitableAgent = agents.find(agent => {
             const hasEnoughBalance = agent.balance >= amt;
             const withinMinLimit = amt >= agent.minWithdrawLimit;
@@ -215,7 +218,7 @@ export class AgentService {
         return this.getTransactionHistory(agent.id);
     }
 
-    async getAgentByAddress(address: string){
+    async getAgentByAddress(address: string) {
         const agent = await this.prisma.agent.findFirst({
             where: { addr: address },
         });

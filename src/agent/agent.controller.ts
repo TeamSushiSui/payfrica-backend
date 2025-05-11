@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { AgentService } from './agent.service';
 import { UpdateAccountDto } from './dto/update-account.dto';
-import { WithdrawRequest, DepositRequest } from "@prisma/client";
+import { WithdrawRequest, DepositRequest, Agent } from "@prisma/client";
 
 type AgentTransaction =
   | (WithdrawRequest & { type: 'withdrawal' })
@@ -20,6 +20,11 @@ type AgentTransaction =
 @Controller('agent')
 export class AgentController {
   constructor(private readonly agentService: AgentService) {}
+
+  @Get()
+  async getAllAgents(): Promise<Agent[]> {
+    return this.agentService.getAllAgents();
+  }
 
   /**
    * GET /agent/best-deposit-agent?coinType=NGNC&amount=5000

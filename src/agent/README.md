@@ -1,10 +1,91 @@
-**Agent API Endpoints**
+Here’s the docs, updated to include a **Get All Agents** endpoint and renumbered accordingly:
 
+**Agent API Endpoints**
 Base path: `/agent`
 
 ---
 
-## 1. Get Best Deposit Agent
+## 1. Get All Agents
+
+* **Endpoint**: `GET /`
+* **Description**: Returns a list of all agents.
+* **Query Parameters:** None
+
+**Response 200 (schema):**
+
+```json
+[
+  {
+    "id": "string",
+    "addr": "string",
+    "balance": number,
+    "coinType": "string",
+    "accountNumber": "string",
+    "bank": "string",
+    "name": "string",
+    "pendingWithdrawals": ["string"],
+    "successfulWithdrawals": ["string"],
+    "totalSuccessfulWithdrawals": number,
+    "totalPendingWithdrawals": number,
+    "totalSuccessfulWithdrawalsAmount": number,
+    "totalPendingWithdrawalsAmount": number,
+    "pendingDeposits": ["string"],
+    "successfulDeposits": ["string"],
+    "totalSuccessfulDeposits": number,
+    "totalPendingDeposits": number,
+    "totalSuccessfulDepositsAmount": number,
+    "totalPendingDepositsAmount": number,
+    "unsuccessfulDeposits": ["string"],
+    "totalUnsuccessfulDeposits": number,
+    "maxWithdrawLimit": number,
+    "maxDepositLimit": number,
+    "minWithdrawLimit": number,
+    "minDepositLimit": number,
+    "createdAt": "ISODate",
+    "updatedAt": "ISODate"
+  }
+]
+```
+
+**Example:**
+
+```json
+[
+  {
+    "id": "a1b2c3d4",
+    "addr": "0xABCDEF123",
+    "balance": 1000000,
+    "coinType": "NGNC",
+    "accountNumber": "0123456789",
+    "bank": "First Bank",
+    "name": "John Doe",
+    "pendingWithdrawals": [],
+    "successfulWithdrawals": [],
+    "totalSuccessfulWithdrawals": 0,
+    "totalPendingWithdrawals": 0,
+    "totalSuccessfulWithdrawalsAmount": 0,
+    "totalPendingWithdrawalsAmount": 0,
+    "pendingDeposits": [],
+    "successfulDeposits": [],
+    "totalSuccessfulDeposits": 0,
+    "totalPendingDeposits": 0,
+    "totalSuccessfulDepositsAmount": 0,
+    "totalPendingDepositsAmount": 0,
+    "unsuccessfulDeposits": [],
+    "totalUnsuccessfulDeposits": 0,
+    "maxWithdrawLimit": 0,
+    "maxDepositLimit": 0,
+    "minWithdrawLimit": 0,
+    "minDepositLimit": 0,
+    "createdAt": "2025-05-01T10:00:00.000Z",
+    "updatedAt": "2025-05-08T12:34:56.000Z"
+  }
+]
+```
+
+---
+
+## 2. Get Best Deposit Agent
 
 * **Endpoint**: `GET /best-deposit-agent`
 * **Query Parameters:**
@@ -38,7 +119,7 @@ Base path: `/agent`
 
 ---
 
-## 2. Get Best Withdrawal Agent
+## 3. Get Best Withdrawal Agent
 
 * **Endpoint**: `GET /best-withdraw-agent`
 * **Query Parameters:**
@@ -58,7 +139,9 @@ Base path: `/agent`
 { "id": "w4x5y6z7" }
 ```
 
-## 3. Get Agent Account Details
+---
+
+## 4. Get Agent Account Details
 
 * **Endpoint**: `GET /account-details`
 * **Query Parameters:**
@@ -87,7 +170,7 @@ Base path: `/agent`
 
 ---
 
-## 4. Update Agent Account
+## 5. Update Agent Account
 
 * **Endpoint**: `PATCH /:agentId/account`
 * **Path Parameters:**
@@ -137,7 +220,7 @@ Base path: `/agent`
 
 ---
 
-## 5. List Withdraw Requests
+## 6. List Withdraw Requests
 
 * **Endpoint**: `GET /:agentId/withdraw-requests`
 * **Path Parameters:**
@@ -171,7 +254,7 @@ Base path: `/agent`
 
 ---
 
-## 6. List Deposit Requests
+## 7. List Deposit Requests
 
 * **Endpoint**: `GET /:agentId/deposit-requests`
 * **Path Parameters:**
@@ -207,7 +290,7 @@ Base path: `/agent`
 
 ---
 
-## 7. List Pending Withdraw Requests
+## 8. List Pending Withdraw Requests
 
 * **Endpoint**: `GET /:agentId/pending-withdraw-requests`
 * **Path Parameters:**
@@ -241,7 +324,7 @@ Base path: `/agent`
 
 ---
 
-## 8. List Pending Deposit Requests
+## 9. List Pending Deposit Requests
 
 * **Endpoint**: `GET /:agentId/pending-deposit-requests`
 * **Path Parameters:**
@@ -277,7 +360,7 @@ Base path: `/agent`
 
 ---
 
-## 9. Get Valid Agent Types
+## 10. Get Valid Agent Types
 
 * **Endpoint**: `GET /valid-types`
 
@@ -286,15 +369,13 @@ Base path: `/agent`
 ```json
 [
   { "shortName": "dep", "fullType": "Deposit Agent" },
-  { "shortName": "wd", "fullType": "Withdrawal Agent" }
+  { "shortName": "wd",  "fullType": "Withdrawal Agent" }
 ]
 ```
 
-**Example:** above
-
 ---
 
-## 10. Get Transaction History by Agent ID
+## 11. Get Transaction History by Agent ID
 
 * **Endpoint**: `GET /:agentId/transactions`
 * **Path Parameters:**
@@ -304,7 +385,7 @@ Base path: `/agent`
 **Response 200 (schema):**
 
 ```json
-[ /* Array with `type` field */ ]
+[ /* Array with a `type` field showing 'withdrawal' or 'deposit' */ ]
 ```
 
 **Example:**
@@ -344,9 +425,9 @@ Base path: `/agent`
 
 ---
 
-## 11. Get All Requests by On-Chain Address
+## 12. Get All Requests by On-Chain Address
 
-* **Endpoint**: `GET /requests?address=0xABCDEF123`
+* **Endpoint**: `GET /requests?address=<on-chain-address>`
 * **Query Parameters:**
 
   * `address` (string, required)
@@ -354,7 +435,7 @@ Base path: `/agent`
 **Response 200 (schema):**
 
 ```json
-[ /* AgentTransaction objects */ ]
+[ /* AgentTransaction objects, same format as `/transactions` above */ ]
 ```
 
-**Example:** same as transactions example above
+**Example:** same as the transaction-history example above.

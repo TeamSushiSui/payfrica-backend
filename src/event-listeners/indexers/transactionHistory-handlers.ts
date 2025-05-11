@@ -115,7 +115,7 @@ export async function handleTransactionHistory(
       }
 
       case 'DepositCancelledEvent': {
-        ops.push(prisma.transaction.updateMany({
+        const p = ops.push(prisma.transaction.updateMany({
           where: {
             transactionId: data.request_id!,
             userId,
