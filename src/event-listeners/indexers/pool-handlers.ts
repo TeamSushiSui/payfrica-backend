@@ -193,6 +193,18 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                         coinBalance: BigInt(coin_b_balance),
                     },
                 }));
+                console.log(evt.sender)
+                // ops.push(prisma.transaction.create({
+                //     data: {
+                //         transactionId: evt.id.txDigest,
+                //         eventType: eventName,
+                //         poolAId: pool_a_id,
+                //         poolBId: pool_b_id,
+                //         inputCoinAmount: BigInt(input_coin_amount),
+                //         outputCoinAmount: BigInt(output_coin_amount),
+                //         timestamp: new Date(),
+                //     }
+                // }))
 
                 break;
             }

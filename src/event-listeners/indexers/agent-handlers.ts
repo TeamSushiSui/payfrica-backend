@@ -136,17 +136,15 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     const exists = arr.some(o => o[shortName] === fullType);
                     if (!exists) {
                         arr.push(mapping);
-
-                        // Upsert will create if missing, or update the array if present
                         await prisma.payfricaAgents.upsert({
                             where: { id: PAYF_RES_ID },
                             create: {
                                 id: PAYF_RES_ID,
-                                validTypes: [mapping],  // first‐time create
+                                validTypes: [mapping],
                                 agents: {},
                             },
                             update: {
-                                validTypes: arr,        // overwrite with the new array
+                                validTypes: arr,        
                             },
                         });
                     }
@@ -156,30 +154,46 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
             }
 
             case 'WithdrawalRequestEvent': {
-                const { request_id, agent_id, amount, user, coin_type, status: rawStatus, time: rawTime } = data;
+                const {
+                    request_id,
+                    agent_id,
+                    amount,
+                    user,
+                    coin_type,
+                    status: rawStatus,
+                    time: rawTime
+                } = data;
+
                 const eventDate = parseEventTime(rawTime);
                 if (!eventDate) {
                     console.error("Bad withdrawal time:", rawTime);
                     break;
                 }
+
                 const statusEnum = parseWithdrawStatus(rawStatus);
 
-                ops.push(prisma.withdrawRequest.upsert({
+                // 1) see if it already exists
+                const exists = await prisma.withdrawRequest.findUnique({
                     where: { id: request_id },
-                    create: {
-                        id: request_id,
-                        agentId: agent_id,
-                        user: user,
-                        amount: BigInt(amount),
-                        coinType: coin_type.name,
-                        status: statusEnum,
-                        requestTime: eventDate,
-                    },
-                    update: {
-                        status: statusEnum,
-                        statusTime: eventDate,
-                    },
-                }));
+                    select: { id: true },
+                });
+
+                // 2) only create if not found
+                if (!exists) {
+                    ops.push(
+                        prisma.withdrawRequest.create({
+                            data: {
+                                id: request_id,
+                                agentId: agent_id,
+                                user: user,
+                                amount: BigInt(amount),
+                                coinType: coin_type.name,
+                                status: statusEnum,
+                                requestTime: eventDate,
+                            },
+                        })
+                    );
+                }
                 break;
             }
 
@@ -215,36 +229,36 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     time: rawTime
                 } = data;
 
-                const eventDate = parseEventTime(rawTime);   // from our previous helper
+                const eventDate = parseEventTime(rawTime);
                 if (!eventDate) {
                     console.error("Bad event time:", rawTime);
                     break;
                 }
 
                 const statusEnum = parseDepositStatus(rawStatus);
+                const exists = await prisma.depositRequest.findUnique({
+                    where: { id: request_id },
+                    select: { id: true },
+                });
 
-                ops.push(
-                    prisma.depositRequest.upsert({
-                        where: { id: request_id },
-                        create: {
-                            id: request_id,
-                            agentId: agent_id,
-                            user: user,
-                            amount: BigInt(amount),
-                            coinType: coin_type.name,
-                            comment: comment,
-                            status: statusEnum,      // ← now a string, e.g. "PENDING"
-                            requestTime: eventDate,
-                        },
-                        update: {
-                            status: statusEnum,      // ← also a string
-                            statusTime: eventDate,
-                        },
-                    })
-                );
+                if (!exists) {
+                    ops.push(
+                        prisma.depositRequest.create({
+                            data: {
+                                id: request_id,
+                                agentId: agent_id,
+                                user: user,
+                                amount: BigInt(amount),
+                                coinType: coin_type.name,
+                                comment: comment,
+                                status: statusEnum,
+                                requestTime: eventDate,
+                            },
+                        })
+                    );
+                }
                 break;
             }
-
 
             case 'DepositApprovedEvent':
             case 'DepositCancelledEvent': {

@@ -166,7 +166,6 @@ export async function handleTransactionHistory(
         }));
         break;
       }
-
       default:
         break;
     }
