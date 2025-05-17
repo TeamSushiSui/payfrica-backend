@@ -2,26 +2,29 @@
 
 | Method | Path                                  | Description                                |
 |--------|---------------------------------------|--------------------------------------------|
-| GET    | `/users/:address`                     | Find or create a user by wallet address    |
-| GET    | `/users/:address/transactions`        | Get a user’s transaction history           |
-| GET    | `/users/:address/stats`               | Get a user’s summary stats (pending counts & amounts) |
-| GET    | `/users/:userId/base-token`           | Get a user’s selected base token           |
-| PATCH  | `/users/:userId/base-token`           | Upsert & update a user’s base token        |
+| GET    | `/users/:address`                     | Get full user details including relations  |
+| GET    | `/users/:address/basic`               | Find or create a user by wallet address    |
+| GET    | `/users/:address/transactions`        | Get a user's transaction history           |
+| GET    | `/users/:address/stats`               | Get a user's summary stats                 |
+| GET    | `/users/:userId/base-token`           | Get a user's selected base token           |
+| PATCH  | `/users/:userId/base-token`           | Upsert & update a user's base token        |
+| PATCH  | `/users/:address`                     | Update user general information            |
+| PATCH  | `/users/:address/account-details`     | Update user's bank account details         |
 
 ---
 
-### 1. Find or Create User
+### 1. Find or Create User (Basic)
 
-Fetches the user record for the given blockchain address, creating it if not present.
+Fetches basic user record for the given blockchain address, creating it if not present.
 
-> **Note:**  this will return the user’s scalar fields only (no related entities).
+> **Note:** this will return the user's scalar fields only (no related entities).
 
 **Request**  
 ```http
-GET /users/0x1234ABCD
+GET /users/:address/basic
 ```
 
-- `:address` — the user’s wallet address (serves as primary key)
+- `:address` — the user's wallet address (serves as primary key)
 
 **Response**  
 - **200 OK**  
@@ -34,6 +37,35 @@ GET /users/0x1234ABCD
     "accountDetails": null,
     "createdAt": "2025-04-26T10:00:00.000Z",
     "updatedAt": "2025-04-26T10:00:00.000Z"
+  }
+  ```
+
+### 1b. Get Full User Details
+
+Fetches complete user information including related entities like country and account details.
+
+**Request**  
+```http
+GET /users/:address
+```
+
+**Response**  
+- **200 OK**  
+  ```json
+  {
+    "id": "0x1234ABCD",
+    "address": "0x1234ABCD",
+    "username": "alice",
+    "country": {
+      "id": 1,
+      "name": "Nigeria",
+      // ...country fields...
+    },
+    "accountDetails": {
+      "accountNumber": "1234567890",
+      "name": "Alice Smith",
+      "bank": "First Bank"
+    }
   }
   ```
 
@@ -168,6 +200,47 @@ Content-Type: application/json
   ```
 - **400 Bad Request** if the body is missing or invalid.
 - **404 Not Found** if the user does not exist.
+
+---
+
+### 6. Update User
+
+Updates general user information.
+
+**Request**  
+```http
+PATCH /users/:address
+Content-Type: application/json
+
+{
+  "username": "alice",
+  // ... other updateable fields
+}
+```
+
+**Response**  
+- **200 OK** Returns the updated user object
+- **404 Not Found** if user doesn't exist
+
+### 7. Update Account Details
+
+Updates or creates bank account details for a user.
+
+**Request**  
+```http
+PATCH /users/:address/account-details
+Content-Type: application/json
+
+{
+  "accountNumber": "1234567890",
+  "name": "Alice Smith",
+  "bank": "First Bank"
+}
+```
+
+**Response**  
+- **200 OK** Returns the updated account details
+- **404 Not Found** if user doesn't exist
 
 ---
 
