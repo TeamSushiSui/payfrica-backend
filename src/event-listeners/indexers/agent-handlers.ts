@@ -144,7 +144,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                                 agents: {},
                             },
                             update: {
-                                validTypes: arr,        
+                                validTypes: arr,
                             },
                         });
                     }
@@ -170,18 +170,14 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     break;
                 }
 
-                const statusEnum = parseWithdrawStatus(rawStatus);
-
-                // 1) see if it already exists
+                // only create if this id is new
                 const exists = await prisma.withdrawRequest.findUnique({
                     where: { id: request_id },
                     select: { id: true },
                 });
-                const coin_decimal = 6;
-                
                 if (!exists) {
                     const amt = BigInt(amount) / BigInt(10 ** coin_decimal);
-
+                    // 1) create the withdrawalRequest
                     ops.push(
                         prisma.withdrawRequest.create({
                             data: {
@@ -190,8 +186,17 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                                 user: user,
                                 amount: amt,
                                 coinType: coin_type.name,
-                                status: statusEnum,
+                                status: parseWithdrawStatus(rawStatus),
                                 requestTime: eventDate,
+                            },
+                        })
+                    );
+                    // 2) increment agent’s pending withdrawals
+                    ops.push(
+                        prisma.agent.update({
+                            where: { id: agent_id },
+                            data: {
+                                totalPendingWithdrawals: { increment: 1 },
                             },
                         })
                     );
@@ -201,21 +206,42 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
 
             case 'WithdrawalApprovedEvent':
             case 'WithdrawalCancelledEvent': {
-                const { request_id, status: rawStatus, time: rawTime } = data;
+                const { request_id, agent_id, status: rawStatus, time: rawTime } = data;
                 const eventDate = parseEventTime(rawTime);
                 if (!eventDate) {
                     console.error("Bad withdrawal time:", rawTime);
                     break;
                 }
-                const statusEnum = parseWithdrawStatus(rawStatus);
+                const statusEnum = parseWithdrawStatus(rawStatus); // "COMPLETED" or "CANCELLED"
 
-                ops.push(prisma.withdrawRequest.update({
-                    where: { id: request_id },
-                    data: {
-                        status: statusEnum,
-                        statusTime: eventDate,
-                    },
-                }));
+                // 1) update the withdrawalRequest record
+                ops.push(
+                    prisma.withdrawRequest.update({
+                        where: { id: request_id },
+                        data: {
+                            status: statusEnum,
+                            statusTime: eventDate,
+                        },
+                    })
+                );
+
+                // 2) adjust the agent’s counters
+                const agentUpdate: Record<string, any> = {
+                    totalPendingWithdrawals: { decrement: 1 },
+                };
+                if (statusEnum === 'COMPLETED') {
+                    agentUpdate.totalSuccessfulWithdrawals = { increment: 1 };
+                }
+                // if you want to track cancelled withdrawals, you'll need a field like
+                // totalUnsuccessfulWithdrawals in your schema—otherwise, at least
+                // pending is decremented on cancellation.
+
+                ops.push(
+                    prisma.agent.update({
+                        where: { id: agent_id },
+                        data: agentUpdate,
+                    })
+                );
                 break;
             }
 
@@ -258,20 +284,30 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                             },
                         })
                     );
+
+                    ops.push(
+                        prisma.agent.update({
+                            where: { id: agent_id },
+                            data: {
+                                totalPendingDeposits: { increment: 1 },
+                            },
+                        })
+                    );
                 }
                 break;
             }
 
             case 'DepositApprovedEvent':
             case 'DepositCancelledEvent': {
-                const { request_id, status: rawStatus, time: rawTime } = data;
+                const { request_id, agent_id, status: rawStatus, time: rawTime } = data;
                 const eventDate = parseEventTime(rawTime);
                 if (!eventDate) {
                     console.error("Bad deposit time:", rawTime);
                     break;
                 }
-                const statusEnum = parseDepositStatus(rawStatus);
+                const statusEnum = parseDepositStatus(rawStatus); // "COMPLETED" | "CANCELLED"
 
+                // 1) update the depositRequest status
                 ops.push(prisma.depositRequest.update({
                     where: { id: request_id },
                     data: {
@@ -279,9 +315,28 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                         statusTime: eventDate,
                     },
                 }));
+
+                // 2) adjust the agent’s counters
+                const agentUpdateData: Record<string, any> = {
+                    // no longer pending
+                    totalPendingDeposits: { decrement: 1 },
+                };
+
+                if (statusEnum === 'COMPLETED') {
+                    // approved → increment successful
+                    agentUpdateData.totalSuccessfulDeposits = { increment: 1 };
+                } else if (statusEnum === 'CANCELLED') {
+                    // cancelled → increment unsuccessful
+                    agentUpdateData.totalUnsuccessfulDeposits = { increment: 1 };
+                }
+
+                ops.push(prisma.agent.update({
+                    where: { id: agent_id },
+                    data: agentUpdateData,
+                }));
+
                 break;
             }
-
 
             case 'SetAgentWithdrawalLimitEvent': {
                 const { agent_id, min_withdraw_limit, max_withdraw_limit } = data;
@@ -296,8 +351,8 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     return prisma.agent.update({
                         where: { id: agent_id },
                         data: {
-                            minWithdrawLimit: BigInt(min_withdraw_limit)/BigInt(10 ** coin_decimal),
-                            maxWithdrawLimit: BigInt(max_withdraw_limit)/BigInt(10 ** coin_decimal),
+                            minWithdrawLimit: BigInt(min_withdraw_limit) / BigInt(10 ** coin_decimal),
+                            maxWithdrawLimit: BigInt(max_withdraw_limit) / BigInt(10 ** coin_decimal),
                         },
                     });
                 })());
@@ -317,8 +372,8 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     return prisma.agent.update({
                         where: { id: agent_id },
                         data: {
-                            minDepositLimit: BigInt(min_deposit_limit)/BigInt(10 ** coin_decimal),
-                            maxDepositLimit: BigInt(max_deposit_limit)/BigInt(10 ** coin_decimal),
+                            minDepositLimit: BigInt(min_deposit_limit) / BigInt(10 ** coin_decimal),
+                            maxDepositLimit: BigInt(max_deposit_limit) / BigInt(10 ** coin_decimal),
                         },
                     });
                 })());

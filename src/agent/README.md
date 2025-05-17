@@ -1,4 +1,3 @@
-Here’s the docs, updated to include a **Get All Agents** endpoint and renumbered accordingly:
 
 **Agent API Endpoints**
 Base path: `/agent`
@@ -439,3 +438,80 @@ Base path: `/agent`
 ```
 
 **Example:** same as the transaction-history example above.
+
+---
+
+## 13. Get Agent by On-Chain Address
+
+* **Endpoint**: `GET /by-address?address=<on-chain-address>`
+* **Query Parameters:**
+
+  * `address` (string, required)
+
+**Response 200 (schema):**
+
+```json
+{
+  "id": "string",
+  "addr": "string",
+  "balance": number,
+  "coinType": "string",
+  "accountNumber": "string",
+  "bank": "string",
+  "name": "string",
+  "pendingWithdrawals": ["string"],
+  "successfulWithdrawals": ["string"],
+  "totalSuccessfulWithdrawals": number,
+  "totalPendingWithdrawals": number,
+  "totalSuccessfulWithdrawalsAmount": number,
+  "totalPendingWithdrawalsAmount": number,
+  "pendingDeposits": ["string"],
+  "successfulDeposits": ["string"],
+  "totalSuccessfulDeposits": number,
+  "totalPendingDeposits": number,
+  "totalSuccessfulDepositsAmount": number,
+  "totalPendingDepositsAmount": number,
+  "unsuccessfulDeposits": ["string"],
+  "totalUnsuccessfulDeposits": number,
+  "maxWithdrawLimit": number,
+  "maxDepositLimit": number,
+  "minWithdrawLimit": number,
+  "minDepositLimit": number,
+  "createdAt": "ISODate",
+  "updatedAt": "ISODate"
+}
+```
+
+**Example:**
+
+```json
+{
+  "id": "a1b2c3d4",
+  "addr": "0xABCDEF123",
+  "balance": 1000000,
+  "coinType": "NGNC",
+  "accountNumber": "0123456789",
+  "bank": "First Bank",
+  "name": "John Doe",
+  "pendingWithdrawals": [],
+  "successfulWithdrawals": [],
+  "totalSuccessfulWithdrawals": 0,
+  "totalPendingWithdrawals": 0,
+  "totalSuccessfulWithdrawalsAmount": 0,
+  "totalPendingWithdrawalsAmount": 0,
+  "pendingDeposits": [],
+  "successfulDeposits": [],
+  "totalSuccessfulDeposits": 0,
+  "totalPendingDeposits": 0,
+  "totalSuccessfulDepositsAmount": 0,
+  "totalPendingDepositsAmount": 0,
+  "unsuccessfulDeposits": [],
+  "totalUnsuccessfulDeposits": 0,
+  "maxWithdrawLimit": 0,
+  "maxDepositLimit": 0,
+  "minWithdrawLimit": 0,
+  "minDepositLimit": 0,
+  "createdAt": "2025-05-01T10:00:00.000Z",
+  "updatedAt": "2025-05-08T12:34:56.000Z"
+}
+```

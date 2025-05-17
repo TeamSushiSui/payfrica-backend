@@ -32,6 +32,7 @@ export class AgentService {
     async getAllAgents(): Promise<Agent[]> {
         return this.prisma.agent.findMany();
     }
+    
     async getBestDepositAgent(coinType: string, amount: number): Promise<{ id: string, accountNumber: string, bank: string, name: string, comment: string } | null> {
         // console.log(coinType, amount);
         const agents = await this.prisma.agent.findMany({
