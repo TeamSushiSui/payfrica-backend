@@ -2,15 +2,15 @@
 
 | Method | Path                                   | Description                                     |
 |--------|----------------------------------------|-------------------------------------------------|
-| GET    | `/pools`                               | List all pools                                  |
-| GET    | `/pools/:poolId`                       | Get a single pool by its ID                     |
-| GET    | `/pools/:poolId/providers`             | List liquidity providers for a pool             |
-| GET    | `/pools/:poolId/fees/default`          | Get a pool’s default fee percentage             |
-| GET    | `/pools/:poolId/fees/scenarios`        | List all custom swap‐fee scenarios              |
-| GET    | `/pools/:poolId/rewards/:provider`     | Get unclaimed rewards for a specific provider   |
-| GET    | `/pools/:poolId/rates`                 | Get a pool’s `coinDecimal` and `ratesDollar`    |
-| GET    | `/pools/coin/:coinName`                | Lookup a pool by its human‐friendly `coinName`  |
-| PATCH  | `/pools/coin/:coinName/rates`          | Update USD exchange rate for a pool by name     |
+| GET    | [/pools](#1-list-all-pools)          | List all pools                                  |
+| GET    | [/pools/:poolId](#2-get-pool-by-id)  | Get a single pool by its ID                     |
+| GET    | [/pools/:poolId/providers](#3-list-liquidity-providers) | List liquidity providers for a pool |
+| GET    | [/pools/:poolId/fees/default](#4-get-default-swap-fee) | Get a pool's default fee percentage |
+| GET    | [/pools/:poolId/fees/scenarios](#5-list-swap-fee-scenarios) | List all custom swap‐fee scenarios |
+| GET    | [/pools/:poolId/rewards/:provider](#6-get-unclaimed-rewards) | Get unclaimed rewards for a specific provider |
+| GET    | [/pools/:poolId/rates](#7-get-pool-rates) | Get a pool's `coinDecimal` and `ratesDollar` |
+| GET    | [/pools/coin/:coinName](#8-lookup-by-coin-name) | Lookup a pool by its human‐friendly `coinName` |
+| PATCH  | [/pools/coin/:coinName/rates](#9-update-usd-rate-by-coin-name) | Update USD exchange rate for a pool by name |
 
 ---
 

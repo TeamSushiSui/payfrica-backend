@@ -5,8 +5,8 @@ Base path: `/admin`
 
 | Method | Path         | Description                     |
 |--------|-------------|---------------------------------|
-| POST   | `/`         | Create a new country            |
-| GET    | `/`         | Get all country names           |
+| POST   | [/](#1-create-country) | Create a new country            |
+| GET    | [/](#2-get-all-country-names) | Get all country names           |
 
 ---
 

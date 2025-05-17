@@ -2,18 +2,18 @@
 
 | Method | Path                                  | Description                                |
 |--------|---------------------------------------|--------------------------------------------|
-| GET    | `/users/:address`                     | Get full user details including relations  |
-| GET    | `/users/:address/basic`               | Find or create a user by wallet address    |
-| GET    | `/users/:address/transactions`        | Get a user's transaction history           |
-| GET    | `/users/:address/stats`               | Get a user's summary stats                 |
-| GET    | `/users/:userId/base-token`           | Get a user's selected base token           |
-| PATCH  | `/users/:userId/base-token`           | Upsert & update a user's base token        |
-| PATCH  | `/users/:address`                     | Update user general information            |
-| PATCH  | `/users/:address/account-details`     | Update user's bank account details         |
+| GET    | [/users/:address](#get-full-user) | Get full user details including relations  |
+| GET    | [/users/:address/basic](#find-or-create-user-basic) | Find or create a user by wallet address |
+| GET    | [/users/:address/transactions](#get-transaction-history) | Get a user's transaction history |
+| GET    | [/users/:address/stats](#get-user-stats) | Get a user's summary stats          |
+| GET    | [/users/:userId/base-token](#get-users-base-token) | Get a user's selected base token |
+| PATCH  | [/users/:userId/base-token](#upsert-and-update-users-base-token) | Upsert & update a user's base token |
+| PATCH  | [/users/:address](#update-user) | Update user general information            |
+| PATCH  | [/users/:address/account-details](#update-account-details) | Update user's bank account details |
 
 ---
 
-### 1. Find or Create User (Basic)
+### Find or Create User Basic 
 
 Fetches basic user record for the given blockchain address, creating it if not present.
 
@@ -40,7 +40,7 @@ GET /users/:address/basic
   }
   ```
 
-### 1b. Get Full User Details
+### Get Full User
 
 Fetches complete user information including related entities like country and account details.
 
@@ -71,7 +71,7 @@ GET /users/:address
 
 ---
 
-### 2. Get Transaction History
+### Get Transaction History 
 
 Returns a user object plus an array of their transactions ordered by date descending.
 
@@ -113,7 +113,7 @@ GET /users/0x1234ABCD/transactions
 
 ---
 
-### 3. Get User Stats
+### Get User Stats
 
 Summarizes active (pending) deposits and withdrawals for a user.
 
@@ -139,7 +139,7 @@ GET /users/0x1234ABCD/stats
 
 ---
 
-### 4. Get User’s Base Token
+### Get Users Base Token 
 
 Fetches the user’s preferred `BaseToken` record, or `null` if none set.
 
@@ -165,7 +165,7 @@ GET /users/0x1234ABCD/base-token
 
 ---
 
-### 5. Upsert & Update User’s Base Token
+### Upsert and Update Users Base Token 
 
 Creates or updates a `BaseToken` record and associates it with the user.
 
@@ -203,7 +203,7 @@ Content-Type: application/json
 
 ---
 
-### 6. Update User
+### Update User 
 
 Updates general user information.
 
@@ -222,7 +222,7 @@ Content-Type: application/json
 - **200 OK** Returns the updated user object
 - **404 Not Found** if user doesn't exist
 
-### 7. Update Account Details
+### Update Account Details 
 
 Updates or creates bank account details for a user.
 

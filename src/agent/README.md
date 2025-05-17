@@ -5,19 +5,19 @@ Base path: `/agent`
 
 | Method | Path                               | Description                                    |
 |--------|---------------------------------------|------------------------------------------------|
-| GET    | `/`                                   | Get all agents                                  |
-| GET    | `/best-deposit-agent`                 | Find best agent for deposit                     |
-| GET    | `/best-withdraw-agent`                | Find best agent for withdrawal                  |
-| GET    | `/account-details`                    | Get agent account details                       |
-| PATCH  | `/:agentId/account`                   | Update agent account info                       |
-| GET    | `/:agentId/withdraw-requests`         | List agent's withdraw requests                  |
-| GET    | `/:agentId/deposit-requests`          | List agent's deposit requests                   |
-| GET    | `/:agentId/pending-withdraw-requests` | List agent's pending withdrawals               |
-| GET    | `/:agentId/pending-deposit-requests`  | List agent's pending deposits                  |
-| GET    | `/valid-types`                        | Get valid agent types                          |
-| GET    | `/:agentId/transactions`              | Get agent's transaction history                |
-| GET    | `/requests`                           | Get all requests by on-chain address           |
-| GET    | `/agent`                              | Get agent by on-chain address                  |
+| GET    | [/](#1-get-all-agents)              | Get all agents                                  |
+| GET    | [/best-deposit-agent](#2-get-best-deposit-agent) | Find best agent for deposit        |
+| GET    | [/best-withdraw-agent](#3-get-best-withdrawal-agent) | Find best agent for withdrawal |
+| GET    | [/account-details](#4-get-agent-account-details) | Get agent account details         |
+| PATCH  | [/:agentId/account](#5-update-agent-account) | Update agent account info           |
+| GET    | [/:agentId/withdraw-requests](#6-list-withdraw-requests) | List agent's withdraw requests |
+| GET    | [/:agentId/deposit-requests](#7-list-deposit-requests) | List agent's deposit requests |
+| GET    | [/:agentId/pending-withdraw-requests](#8-list-pending-withdraw-requests) | List agent's pending withdrawals |
+| GET    | [/:agentId/pending-deposit-requests](#9-list-pending-deposit-requests) | List agent's pending deposits |
+| GET    | [/valid-types](#10-get-valid-agent-types) | Get valid agent types                |
+| GET    | [/:agentId/transactions](#11-get-transaction-history-by-agent-id) | Get agent's transaction history |
+| GET    | [/requests](#12-get-all-requests-by-on-chain-address) | Get all requests by on-chain address |
+| GET    | [/agent](#13-get-agent-by-on-chain-address) | Get agent by on-chain address      |
 
 ---
 
