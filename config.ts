@@ -7,8 +7,8 @@ export const CONFIG = {
 	DEFAULT_LIMIT: 50,
 	NETWORK: (process.env.NETWORK as Network) || 'testnet',
 	RPC_URL: (process.env.RPC_URL as string) || 'https://fullnode.testnet.sui.io',
-    PACKAGE_ID: "0x162382f82026bd0ff1277487f1c744f2745adbaf2c36aefc34039225cac72f88",
-	PAYF_RES_ID: "0x8f2e3807b69d8448a3631624e43938636c76cdd42808b0487d26f213794c28d4"
+    PACKAGE_ID: "0x85ac1897861a59e3419b97e0c376393782d28ecaf1abd8233bbfe49084a6c782",
+	PAYF_RES_ID: "0x07285902f250fa1e4904fa7cdcd3ba851cd95fe223d08d0338098e9aba323032"
 };
 
 const rpcUrl = getFullnodeUrl(CONFIG.NETWORK);

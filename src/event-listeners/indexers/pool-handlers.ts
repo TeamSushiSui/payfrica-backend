@@ -135,7 +135,6 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                         coinBalance: BigInt(coin_balance),
                     },
                 }));
-                // Reducing liquidityProvider's amount must happen with user tracking
                 break;
             }
 
