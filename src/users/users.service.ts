@@ -5,6 +5,8 @@ import { User, Transaction } from '@prisma/client';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Country, AccountDetails } from '@prisma/client';
 import { Tokens } from '@prisma/client';
+import { makeUser } from 'config';
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
@@ -14,15 +16,15 @@ export class UsersService {
   }
 
   async findOrCreateUser(address: string) {
-    // Find user or create if doesn't exist
     const user = await this.prisma.user.findUnique({
       where: { address },
     });
-
+    await makeUser(address);
     if (user) {
       return user;
     }
 
+    // makeUser(address);
     return this.prisma.user.create({
       data: { address: address }
     });
