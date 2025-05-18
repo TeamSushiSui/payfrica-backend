@@ -19,12 +19,12 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({
       where: { address },
     });
-    await makeUser(address);
+    // await makeUser(address);
     if (user) {
       return user;
     }
 
-    // makeUser(address);
+    makeUser(address);
     return this.prisma.user.create({
       data: { address: address }
     });
