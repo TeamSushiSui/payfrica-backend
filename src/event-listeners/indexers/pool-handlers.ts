@@ -6,23 +6,20 @@ import { TransactionStatus, TransactionType } from '@prisma/client';
 type Payload = Record<string, any>;
 
 function parseEventTime(raw: unknown): Date | null {
-    // 1) pull out the raw value if it’s wrapped in an object
     let tsVal: number | string;
     if (raw && typeof raw === 'object' && 'value' in raw) {
-        // @ts-ignore
+
         tsVal = (raw as any).value;
     } else {
         tsVal = raw as number | string;
     }
 
-    // 2) coerce to a number
     const n = typeof tsVal === 'string'
         ? parseInt(tsVal, 10)
         : (tsVal as number);
 
     if (isNaN(n)) return null;
 
-    // 3) since this n is already milliseconds, use it directly
     const d = new Date(n);
     return isNaN(d.getTime()) ? null : d;
 }
@@ -64,7 +61,6 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                         }))
                         .catch(err => {
                             console.error(`Failed to upsert token metadata for ${coinTypeName}:`, err);
-                            // swallow or rethrow depending on your needs
                         })
                 );
 
@@ -101,18 +97,52 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
 
             case 'AddedToLiquidityPoolEvent': {
                 const { pool_id, coin_type, amount, coin_balance } = data;
+                const transaction_id = evt.id.txDigest;
+                const date = parseEventTime(evt.timestampMs);
+                if (!date) {
+                    console.error("Bad added liquidity time:", evt.timestampMs);
+                    break;
+                }
+
+                const txExists = await prisma.transaction.findFirst({
+                    where: { transactionId: transaction_id }
+                });
+                if (!txExists) {
+                    const coinTypeName = `0x${coin_type.name}`;
+                    const symbol = coin_type.name.split('::').pop()!;
+                    const meta = await fetchMetadata(coinTypeName);
+                    const decimals = Number(meta.decimals) || 0;
+
+                    ops.push(
+                        prisma.transaction.create({
+                            data: {
+                                transactionId: transaction_id,
+                                userId: evt.sender,
+                                type: TransactionType.ADD_LIQUIDITY,
+                                interactedWith: "Liquidity Pool",
+                                status: TransactionStatus.SUCCESS,
+                                date,
+                                incomingAsset: '',
+                                incomingAmount: 0,
+                                outgoingAsset: symbol,
+                                outgoingAmount: Number(amount) / Math.pow(10, decimals),
+                                fees: 0,
+                            }
+                        })
+                    );
+                }
 
                 ops.push(prisma.liquidityProvider.upsert({
                     where: { id: `${pool_id}-${coin_type}` },
                     create: {
                         id: `${pool_id}-${coin_type}`,
                         poolId: pool_id,
-                        provider: '',
+                        provider: evt.sender,
                         amount: BigInt(amount),
                         rewards: BigInt(0),
                     },
                     update: {
-                        amount: { increment: BigInt(amount) }
+                        amount: BigInt(amount) 
                     },
                 }));
 
@@ -122,12 +152,46 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                         coinBalance: BigInt(coin_balance),
                     },
                 }));
-
                 break;
             }
+
 
             case 'RemovedFromLiquidityPoolEvent': {
                 const { pool_id, coin_type, amount, coin_balance } = data;
+                const transaction_id = evt.id.txDigest;
+                const date = parseEventTime(evt.timestampMs);
+                if (!date) {
+                    console.error("Bad removed liquidity time:", evt.timestampMs);
+                    break;
+                }
+
+                const txExists = await prisma.transaction.findFirst({
+                    where: { transactionId: transaction_id }
+                });
+                if (!txExists) {
+                    const coinTypeName = `0x${coin_type.name}`;
+                    const symbol = coin_type.name.split('::').pop()!;
+                    const meta = await fetchMetadata(coinTypeName);
+                    const decimals = Number(meta.decimals) || 0;
+
+                    ops.push(
+                        prisma.transaction.create({
+                            data: {
+                                transactionId: transaction_id,
+                                userId: evt.sender,
+                                type: TransactionType.REMOVE_LIQUIDITY,
+                                interactedWith: "Liquidity Pool",
+                                status: TransactionStatus.SUCCESS,
+                                date,
+                                incomingAsset: symbol,
+                                incomingAmount: Number(amount) / Math.pow(10, decimals),
+                                outgoingAsset: '',
+                                outgoingAmount: 0,
+                                fees: 0,
+                            }
+                        })
+                    );
+                }
 
                 ops.push(prisma.pool.update({
                     where: { id: pool_id },
@@ -137,6 +201,7 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                 }));
                 break;
             }
+
 
             case 'PoolDefualtFeesUpdatedEvent': {
                 const { pool_id, defualt_fees } = data;
@@ -218,11 +283,9 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                         prisma.pool.findUnique({ where: { id: pool_b_id }, select: { coinType: true } }),
                     ]);
 
-                    // derive the symbol (e.g. "USDC" out of "0x123::USDC::USDC")
                     const symbolA = poolA!.coinType.split('::').pop()!;
                     const symbolB = poolB!.coinType.split('::').pop()!;
 
-                    // fetch on‐chain decimals
                     const [metaA, metaB] = await Promise.all([
                         fetchMetadata(poolA!.coinType),
                         fetchMetadata(poolB!.coinType),
