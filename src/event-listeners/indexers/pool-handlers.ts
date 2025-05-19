@@ -122,8 +122,8 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                                 interactedWith: "Liquidity Pool",
                                 status: TransactionStatus.SUCCESS,
                                 date,
-                                incomingAsset: '',
-                                incomingAmount: 0,
+                                incomingAsset: null,
+                                incomingAmount: null,
                                 outgoingAsset: symbol,
                                 outgoingAmount: Number(amount) / Math.pow(10, decimals),
                                 fees: 0,
@@ -185,8 +185,8 @@ export const handlePoolEvents = async (events: SuiEvent[], moduleType: string) =
                                 date,
                                 incomingAsset: symbol,
                                 incomingAmount: Number(amount) / Math.pow(10, decimals),
-                                outgoingAsset: '',
-                                outgoingAmount: 0,
+                                outgoingAsset: null,
+                                outgoingAmount: null,
                                 fees: 0,
                             }
                         })

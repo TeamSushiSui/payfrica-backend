@@ -11,9 +11,10 @@ import { PoolsService } from './pools/pools.service';
 import { PoolsController } from './pools/pools.controller';
 import { PoolsModule } from './pools/pools.module';
 import { AdminModule } from './admin/admin.module';
+import { CardsModule } from './cards/cards.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, AgentModule, EventListenersModule, PoolsModule, AdminModule],
+  imports: [PrismaModule, UsersModule, AgentModule, EventListenersModule, PoolsModule, AdminModule, CardsModule],
   controllers: [AppController, PoolsController],
   providers: [AppService, PoolsService],
 })

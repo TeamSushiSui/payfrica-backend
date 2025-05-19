@@ -21,6 +21,25 @@ model User {
   updatedAt      DateTime        @updatedAt
 }
 
+model TemporaryCard {
+  id              String   @id @map("_id")
+  name            String
+  owner           String   
+  blobId          String
+  blobObjectId    String   
+  blobUrl         String
+  s               String
+  cardAddress    String @unique
+  expirationDate DateTime
+  hp              Bytes
+  blocked         Boolean @default(false)
+  falseAttempts  Int     @default(0)
+  numUnlocks     Int     @default(0)
+  creationTime   DateTime
+  transactions    TemporaryCardTransactionHistory[]
+}
+
+
 model AccountDetails {
   id            String @id @default(auto()) @map("_id") @db.ObjectId
   accountNumber String
@@ -48,6 +67,19 @@ model Tokens {
   Country  Country[]
 }
 
+model TemporaryCardTransactionHistory{
+  id             String            @id @default(cuid()) @map("_id")
+  transactionId  String            @unique
+  type           CardTransactionType
+  interactedWith String?
+  date           DateTime          @default(now())
+  status         TransactionStatus
+  amount         Float
+
+  cardId         String
+  card           TemporaryCard     @relation(fields: [cardId], references: [id])
+}
+
 model Transaction {
   id             String            @id @default(cuid()) @map("_id")
   transactionId  String
@@ -66,6 +98,15 @@ model Transaction {
 
   @@unique([transactionId, userId])
   @@index([transactionId])
+}
+
+enum CardTransactionType {
+  CREATE
+  UNLOCK
+  BLOCKED
+  USE
+  ADD_BALANCE
+  REMOVE_BALANCE
 }
 
 enum TransactionType {
@@ -97,7 +138,7 @@ enum DepositStatus {
 }
 
 model PayfricaAgents {
-  id         String @id @map("_id") // removed @db.ObjectId and @default(auto())
+  id         String @id @map("_id") 
   validTypes Json
   agents     Json
 }
@@ -137,7 +178,7 @@ model Agent {
 model WithdrawRequest {
   id          String         @id @map("_id")
   amount      BigInt
-  user        String // User's blockchain address
+  user        String 
   agentId     String
   coinType    String
   status      WithdrawStatus @default(PENDING)
@@ -152,7 +193,7 @@ model WithdrawRequest {
 model DepositRequest {
   id                String        @id @map("_id")
   amount            BigInt
-  user              String // User's blockchain address
+  user              String 
   agentId           String
   successfulAgentId String?
   coinType          String
@@ -176,10 +217,10 @@ model Pool {
   id             String   @id @map("_id")
   coinType       String
   coinName       String
-  coinBalance    BigInt // total coin in pool
-  rewardsBalance BigInt // total rewards
+  coinBalance    BigInt 
+  rewardsBalance BigInt 
   feeDecimal     Int
-  defaultFees    Int? // nullable
+  defaultFees    Int? 
   coinDecimal    Int
   ratesDollar    Float
   createdAt      DateTime @default(now())
@@ -191,9 +232,9 @@ model Pool {
 model LiquidityProvider {
   id       String @id @map("_id")
   poolId   String
-  provider String // address
+  provider String 
   amount   BigInt
-  rewards  BigInt // pending rewards
+  rewards  BigInt 
 
   pool Pool @relation(fields: [poolId], references: [id])
 
@@ -216,6 +257,6 @@ model PoolEvent {
   eventType String
   poolId    String
   coinType  String
-  details   Json // Flexible event details
+  details   Json 
   timestamp DateTime @default(now())
 }
