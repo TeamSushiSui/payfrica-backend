@@ -24,10 +24,21 @@ export class CardsService {
     }
 
     async getCardsByOwner(ownerAddress: string) {
-        return this.prisma.temporaryCard.findMany({
+        const cards = await this.prisma.temporaryCard.findMany({
             where: { owner: ownerAddress },
-            orderBy: { creationTime: 'desc' },
+            select: {
+                owner: true,
+                blobId: true,
+                s: true,
+                cardAddress: true,
+                name: true
+            }
         });
-    }
 
+        if (cards.length === 0) {
+            throw new NotFoundException(`No cards found for owner ${ownerAddress}`);
+        }
+
+        return cards;
+    }
 }

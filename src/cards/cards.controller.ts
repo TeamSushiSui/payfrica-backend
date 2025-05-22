@@ -15,4 +15,5 @@ export class CardsController {
         return this.cardService.getCardsByOwner(ownerAddress);
     }
 
+    
 }
