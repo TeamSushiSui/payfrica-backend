@@ -110,13 +110,13 @@ export const handleTemporaryCardEvents = async (events: SuiEvent[], moduleType: 
 
       case 'CardUsedEvent': {
         const {
-          card_id, card_address, receiver, amount, owner, time
+          card_id, card_address, receiver, receiver_ns, amount, owner, time
         } = data;
 
         ops.push(
           addTransactionIfNotExists(evt.id.txDigest, {
             type: CardTransactionType.USE,
-            interactedWith: receiver,
+            interactedWith: receiver_ns,
             amount,
             status: TransactionStatus.SUCCESS,
             date: new Date(time),
