@@ -103,7 +103,6 @@ export async function handleTransactionHistory(
       }
 
       case 'DepositApprovedEvent': {
-        // Update existing deposit record
         ops.push(prisma.transaction.updateMany({
           where: {
             transactionId: data.request_id!,
@@ -115,6 +114,8 @@ export async function handleTransactionHistory(
       }
 
       case 'DepositCancelledEvent': {
+        // console.log(data);
+
         const p = ops.push(prisma.transaction.updateMany({
           where: {
             transactionId: data.request_id!,
@@ -162,6 +163,7 @@ export async function handleTransactionHistory(
       }
 
       case 'WithdrawalCancelledEvent': {
+        // console.log(data);
         ops.push(prisma.transaction.updateMany({
           where: { transactionId: data.request_id!, userId },
           data: { status: TransactionStatus.FAILED }
@@ -173,6 +175,5 @@ export async function handleTransactionHistory(
     }
   }
 
-  // 4) Execute all operations in parallel
   await Promise.all(ops);
 }

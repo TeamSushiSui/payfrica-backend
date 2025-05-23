@@ -169,15 +169,12 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     console.error("Bad withdrawal time:", rawTime);
                     break;
                 }
-
-                // only create if this id is new
                 const exists = await prisma.withdrawRequest.findUnique({
                     where: { id: request_id },
                     select: { id: true },
                 });
                 if (!exists) {
                     const amt = BigInt(amount) / BigInt(10 ** coin_decimal);
-                    // 1) create the withdrawalRequest
                     ops.push(
                         prisma.withdrawRequest.create({
                             data: {
@@ -191,7 +188,6 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                             },
                         })
                     );
-                    // 2) increment agent’s pending withdrawals
                     ops.push(
                         prisma.agent.update({
                             where: { id: agent_id },
@@ -212,9 +208,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     console.error("Bad withdrawal time:", rawTime);
                     break;
                 }
-                const statusEnum = parseWithdrawStatus(rawStatus); // "COMPLETED" or "CANCELLED"
-
-                // 1) update the withdrawalRequest record
+                const statusEnum = parseWithdrawStatus(rawStatus); 
                 ops.push(
                     prisma.withdrawRequest.update({
                         where: { id: request_id },
@@ -225,17 +219,12 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     })
                 );
 
-                // 2) adjust the agent’s counters
                 const agentUpdate: Record<string, any> = {
                     totalPendingWithdrawals: { decrement: 1 },
                 };
                 if (statusEnum === 'COMPLETED') {
                     agentUpdate.totalSuccessfulWithdrawals = { increment: 1 };
                 }
-                // if you want to track cancelled withdrawals, you'll need a field like
-                // totalUnsuccessfulWithdrawals in your schema—otherwise, at least
-                // pending is decremented on cancellation.
-
                 ops.push(
                     prisma.agent.update({
                         where: { id: agent_id },

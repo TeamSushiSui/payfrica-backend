@@ -57,7 +57,6 @@ export class PoolsController {
     return this.poolsService.getUnclaimedRewards(poolId, provider);
   }
 
-  /** GET /pools/:poolId/rates */
   @Get(':poolId/rates')
   getRates(
     @Param('poolId') poolId: string,
