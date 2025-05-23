@@ -10,9 +10,9 @@ export const CONFIG = {
 	DEFAULT_LIMIT: 50,
 	NETWORK: (process.env.NETWORK as Network) || 'testnet',
 	RPC_URL: (process.env.RPC_URL as string) || 'https://fullnode.testnet.sui.io',
-	PACKAGE_ID: "0x5f4babde03d2d69e507bf668ada801f462d8b87fffd9bce517b3b69e247b4c9f",
-	PAYF_RES_ID: "0xada62e7c4404c563686f9f7770f35c126a7e133c4c11eaf7db78cf6fa6fabbef",
-	PAYFRICA_ID: "0x9a903273f8df1f57360d311ce969fec5d31d22ed61e0f86ce672c25bd4780017"
+	PACKAGE_ID: "0x11eda397bdd9faf17100b594188d8a92e54c747de0a537c4fd3944bae2cf0dc8",
+	PAYF_RES_ID: "0x8a801999a070624389c7248a70ecb6eee1128e7de9550962ad27e4010ea0f678",
+	PAYFRICA_ID: "0xc0068fc8efd6edfeee7e0afc1ed7c8f4028f62fd07067ea81364bd6e00fbf687"
 };
 
 const rpcUrl = getFullnodeUrl(CONFIG.NETWORK);
@@ -26,6 +26,7 @@ export const suinsClient = new SuinsClient({
 export async function makeUser(address: string) {
 	if (!process.env.PRIVATE_KEY) {
 		throw new Error("Missing PRIVATE_KEY in .env file");
+
 	}
 	const keypair = Ed25519Keypair.fromSecretKey(process.env.PRIVATE_KEY);
 
@@ -53,7 +54,6 @@ export async function makeUser(address: string) {
 		});
 
 		if (objectChanges) {
-			
 		}
 	} catch (error) {
 	}

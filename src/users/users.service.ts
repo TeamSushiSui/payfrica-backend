@@ -16,15 +16,16 @@ export class UsersService {
   }
 
   async findOrCreateUser(address: string) {
+    // await makeUser(address);
     const user = await this.prisma.user.findUnique({
       where: { address },
     });
-    // await makeUser(address);
+    
     if (user) {
       return user;
     }
 
-    makeUser(address);
+    await makeUser(address);
     return this.prisma.user.create({
       data: { address: address }
     });
@@ -48,7 +49,7 @@ export class UsersService {
   async updateAccountDetails(address: string, account_details: { accountNumber: string, name: string, bank: string }): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { address },
-      include: { accountDetails: true }, // Include existing accountDetails
+      include: { accountDetails: true },
     });
 
     if (!user) {
