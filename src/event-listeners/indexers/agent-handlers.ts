@@ -10,11 +10,9 @@ type DepositStatus = "PENDING" | "COMPLETED" | "CANCELLED";
 type WithdrawStatus = "PENDING" | "COMPLETED" | "CANCELLED";
 
 function parseDepositStatus(raw: any): DepositStatus {
-    // if it’s wrapped in { variant, fields }
     if (raw && typeof raw === "object" && "variant" in raw) {
         return raw.variant.toUpperCase() as DepositStatus;
     }
-    // if it’s already a string
     return String(raw).toUpperCase() as DepositStatus;
 }
 
@@ -26,7 +24,6 @@ function parseWithdrawStatus(raw: any): WithdrawStatus {
 }
 
 function parseEventTime(raw: unknown): Date | null {
-    // 1) pull out the raw value if it’s wrapped in an object
     let tsVal: number | string;
     if (raw && typeof raw === 'object' && 'value' in raw) {
         // @ts-ignore
@@ -35,14 +32,12 @@ function parseEventTime(raw: unknown): Date | null {
         tsVal = raw as number | string;
     }
 
-    // 2) coerce to a number
     const n = typeof tsVal === 'string'
         ? parseInt(tsVal, 10)
         : (tsVal as number);
 
     if (isNaN(n)) return null;
 
-    // 3) since this n is already milliseconds, use it directly
     const d = new Date(n);
     return isNaN(d.getTime()) ? null : d;
 }
@@ -56,24 +51,10 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
             throw new Error(`Expected events from ${moduleType}, got ${evt.type}`);
         }
 
-        // e.g. "payfrica::bridge_agents::WithdrawalRequestEvent"
         const parts = evt.type.split('::');
         const eventName = parts[parts.length - 1]!;
         const data = evt.parsedJson as Payload;
-        // const when = data.time ? new Date(data.time) : new Date();
 
-        // 1) always log to the generic event table
-        // ops.push(prisma.Events.create({
-        //     data: {
-        //         module: moduleType,
-        //         eventType: eventName,
-        //         txDigest: evt.id.txDigest,
-        //         payload: data,
-        //         timestamp: when,
-        //     }
-        // }));
-
-        // 2) now handle domain updates
         switch (eventName) {
             case 'AgentAddedEvent': {
                 const { agent_id, agent, agent_type } = data;
@@ -82,12 +63,9 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     create: {
                         id: agent_id,
                         addr: agent,
-
-                        // new account-detail fields, initialized empty
                         name: '',
                         accountNumber: '',
                         bank: '',
-
                         coinType: agent_type.name,
                         balance: BigInt(0),
                         pendingWithdrawals: [],
@@ -109,21 +87,18 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                         maxDepositLimit: BigInt(0),
                         minDepositLimit: BigInt(0),
                     },
-                    update: {
-                        // no-op on update
-                    },
+                    update: {},
                 }));
                 break;
             }
 
             case 'ValidAgentTypeAddedEvent': {
                 const { agent_type } = data;
-                const fullType = agent_type.name;             // e.g. "payfrica::agents::Foo"
-                const shortName = fullType.split('::').pop()!; // "Foo"
-                const mapping = { [shortName]: fullType };   // JSON object
+                const fullType = agent_type.name;
+                const shortName = fullType.split('::').pop()!;
+                const mapping = { [shortName]: fullType };
 
                 ops.push((async () => {
-                    // Fetch existing JSON array (if any)
                     const rec = await prisma.payfricaAgents.findUnique({
                         where: { id: PAYF_RES_ID },
                         select: { validTypes: true },
@@ -132,7 +107,6 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                         ? (rec!.validTypes as any[])
                         : [];
 
-                    // Only proceed if this mapping is not yet in the array
                     const exists = arr.some(o => o[shortName] === fullType);
                     if (!exists) {
                         arr.push(mapping);
@@ -208,7 +182,7 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     console.error("Bad withdrawal time:", rawTime);
                     break;
                 }
-                const statusEnum = parseWithdrawStatus(rawStatus); 
+                const statusEnum = parseWithdrawStatus(rawStatus);
                 ops.push(
                     prisma.withdrawRequest.update({
                         where: { id: request_id },
@@ -294,9 +268,8 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     console.error("Bad deposit time:", rawTime);
                     break;
                 }
-                const statusEnum = parseDepositStatus(rawStatus); // "COMPLETED" | "CANCELLED"
+                const statusEnum = parseDepositStatus(rawStatus);
 
-                // 1) update the depositRequest status
                 ops.push(prisma.depositRequest.update({
                     where: { id: request_id },
                     data: {
@@ -305,17 +278,13 @@ export const handleBridgeEvents = async (events: SuiEvent[], moduleType: string)
                     },
                 }));
 
-                // 2) adjust the agent’s counters
                 const agentUpdateData: Record<string, any> = {
-                    // no longer pending
                     totalPendingDeposits: { decrement: 1 },
                 };
 
                 if (statusEnum === 'COMPLETED') {
-                    // approved → increment successful
                     agentUpdateData.totalSuccessfulDeposits = { increment: 1 };
                 } else if (statusEnum === 'CANCELLED') {
-                    // cancelled → increment unsuccessful
                     agentUpdateData.totalUnsuccessfulDeposits = { increment: 1 };
                 }
 

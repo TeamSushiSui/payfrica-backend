@@ -66,23 +66,6 @@ describe('AgentController', () => {
     expect(service.createAgent).toHaveBeenCalledWith(createAgentDto);
   });
 
-  // it('should throw an error if required fields are missing', async () => {
-  //   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  //   const createAgentDto: Partial<CreateAgentDto> = {
-  //     addr: '0x123',
-  //     coinType: 'SUI',
-  //     // Missing required fields like accountNumber, bank, and name
-  //   };
-
-  //   // jest.spyOn(service, 'createAgent').mockImplementation(() => {
-  //   //   throw new Error('Validation error: Missing required fields');
-  //   // });
-
-  //   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  //   await expect(controller.create(createAgentDto)).rejects.toThrow();
-  //   expect(service.createAgent).not.toHaveBeenCalled();
-  // });
-
   it('should throw an error if the service fails to create the agent', async () => {
     const createAgentDto = {
       addr: '0x123',
@@ -105,8 +88,8 @@ describe('AgentController', () => {
   describe('AgentController - Get All Agents', () => {
     it('should return a list of all agents', async () => {
       const agents = [
-        mockAgent({id: '1', name: 'Agent 1'}),
-        mockAgent({id: '2', name: 'Agent 2'})
+        mockAgent({ id: '1', name: 'Agent 1' }),
+        mockAgent({ id: '2', name: 'Agent 2' })
       ];
 
       jest.spyOn(service, 'getAllAgents').mockResolvedValue(agents);
@@ -125,7 +108,7 @@ describe('AgentController', () => {
 
     it('should throw an error if the service fails to retrieve agents', async () => {
       jest.spyOn(service, 'getAllAgents').mockRejectedValue(new Error('Service error'));
-  
+
       await expect(controller.findAll()).rejects.toThrow('Service error');
       expect(service.getAllAgents).toHaveBeenCalled();
     });
@@ -138,31 +121,31 @@ describe('AgentController', () => {
         mockAgent({ id: '1', coinType: 'SUI', name: 'Agent 1' }),
         mockAgent({ id: '2', coinType: 'SUI', name: 'Agent 2' }),
       ];
-  
+
       jest.spyOn(service, 'findAgentsByType').mockResolvedValue(agents);
-  
+
       const result = await controller.findByType(coinType);
       expect(result).toEqual(agents);
       expect(service.findAgentsByType).toHaveBeenCalledWith(coinType);
     });
-  
+
     it('should throw error if no agents match the coin type', async () => {
       const coinType = 'SUI';
-    
+
       jest.spyOn(service, 'findAgentsByType').mockResolvedValue([]); // Simulate service returning null
-    
+
       await expect(controller.findByType(coinType)).rejects.toThrow(
         `Agents with type '${coinType}' not found`
       );
-    
+
       expect(service.findAgentsByType).toHaveBeenCalledWith(coinType);
     });
-  
+
     it('should throw an error if the service fails to retrieve agents by coin type', async () => {
       const coinType = 'SUI';
-  
+
       jest.spyOn(service, 'findAgentsByType').mockRejectedValue(new Error('Service error'));
-  
+
       await expect(controller.findByType(coinType)).rejects.toThrow('Service error');
       expect(service.findAgentsByType).toHaveBeenCalledWith(coinType);
     });
@@ -172,28 +155,28 @@ describe('AgentController', () => {
     it('should return the details of an agent with a valid ID', async () => {
       const agentId = '1';
       const agent = mockAgent({ id: agentId, name: 'Agent 1' });
-  
+
       jest.spyOn(service, 'getAgentById').mockResolvedValue(agent);
-  
+
       const result = await controller.findOne(agentId);
       expect(result).toEqual(agent);
       expect(service.getAgentById).toHaveBeenCalledWith(agentId);
     });
-  
+
     it('should throw NotFound Error for an invalid ID', async () => {
       const agentId = '999';
-  
+
       jest.spyOn(service, 'getAgentById').mockResolvedValue(null);
-  
+
       await expect(controller.findOne(agentId)).rejects.toThrow(`Agent with ID '${agentId}' not found`);
       expect(service.getAgentById).toHaveBeenCalledWith(agentId);
     });
-  
+
     it('should throw an error if the service fails to retrieve the agent', async () => {
       const agentId = '1';
-  
+
       jest.spyOn(service, 'getAgentById').mockRejectedValue(new Error('Service error'));
-  
+
       await expect(controller.findOne(agentId)).rejects.toThrow('Service error');
       expect(service.getAgentById).toHaveBeenCalledWith(agentId);
     });
@@ -209,14 +192,14 @@ describe('AgentController', () => {
         maxDepositLimit: 5000,
       };
       const updatedAgent = mockAgent({ id: agentId, ...updateDto });
-  
+
       jest.spyOn(service, 'updateAgentLimits').mockResolvedValue(updatedAgent);
-  
+
       const result = await controller.updateLimits(agentId, updateDto);
       expect(result).toEqual(updatedAgent);
       expect(service.updateAgentLimits).toHaveBeenCalledWith(agentId, updateDto);
     });
-  
+
     it('should throw an error if the agent is not found', async () => {
       const agentId = '999';
       const updateDto = {
@@ -225,13 +208,13 @@ describe('AgentController', () => {
         minDepositLimit: 100,
         maxDepositLimit: 5000,
       };
-  
+
       jest.spyOn(service, 'updateAgentLimits').mockRejectedValue(new Error('Agent not found'));
-  
+
       await expect(controller.updateLimits(agentId, updateDto)).rejects.toThrow('Agent not found');
       expect(service.updateAgentLimits).toHaveBeenCalledWith(agentId, updateDto);
     });
-  
+
     it('should throw an error if the update operation fails', async () => {
       const agentId = '1';
       const updateDto = {
@@ -240,9 +223,9 @@ describe('AgentController', () => {
         minDepositLimit: 100,
         maxDepositLimit: 5000,
       };
-  
+
       jest.spyOn(service, 'updateAgentLimits').mockRejectedValue(new Error('Update failed'));
-  
+
       await expect(controller.updateLimits(agentId, updateDto)).rejects.toThrow('Update failed');
       expect(service.updateAgentLimits).toHaveBeenCalledWith(agentId, updateDto);
     });
@@ -253,30 +236,30 @@ describe('AgentController', () => {
       const agentId = '1';
       const balanceDto = { amount: 500 };
       const updatedAgent = mockAgent({ id: agentId, balance: 1500 });
-  
+
       jest.spyOn(service, 'addAgentBalance').mockResolvedValue(updatedAgent);
-  
+
       const result = await controller.addBalance(agentId, balanceDto);
       expect(result).toEqual(updatedAgent);
       expect(service.addAgentBalance).toHaveBeenCalledWith(agentId, balanceDto.amount);
     });
-  
+
     it('should throw an error if the agent is not found', async () => {
       const agentId = '999';
       const balanceDto = { amount: 500 };
-  
+
       jest.spyOn(service, 'addAgentBalance').mockRejectedValue(new Error('Agent not found'));
-  
+
       await expect(controller.addBalance(agentId, balanceDto)).rejects.toThrow('Agent not found');
       expect(service.addAgentBalance).toHaveBeenCalledWith(agentId, balanceDto.amount);
     });
-  
+
     it('should throw an error if the update operation fails', async () => {
       const agentId = '1';
       const balanceDto = { amount: 500 };
-  
+
       jest.spyOn(service, 'addAgentBalance').mockRejectedValue(new Error('Update failed'));
-  
+
       await expect(controller.addBalance(agentId, balanceDto)).rejects.toThrow('Update failed');
       expect(service.addAgentBalance).toHaveBeenCalledWith(agentId, balanceDto.amount);
     });
@@ -292,31 +275,14 @@ describe('AgentController', () => {
         coinType: 'BTC',
       };
       const createdRequest = mockWithdrawRequest({ ...withdrawDto, status: 'PENDING' });
-  
+
       jest.spyOn(service, 'createWithdrawRequest').mockResolvedValue(createdRequest);
-  
+
       const result = await controller.createWithdrawRequest(withdrawDto);
       expect(result).toEqual(createdRequest);
       expect(service.createWithdrawRequest).toHaveBeenCalledWith(withdrawDto);
     });
-  
-    // it('should throw an error if required fields are missing', async () => {
-    //   const withdrawDto = {
-    //     amount: 500,
-    //     user: 'user123',
-    //     // Missing required fields like requestId, agentId, and coinType
-    //   } as any;
-  
-    //   jest.spyOn(service, 'createWithdrawRequest').mockImplementation(() => {
-    //     throw new Error('Validation error: Missing required fields');
-    //   });
-  
-    //   await expect(controller.createWithdrawRequest(withdrawDto)).rejects.toThrow(
-    //     'Validation error: Missing required fields',
-    //   );
-    //   expect(service.createWithdrawRequest).not.toHaveBeenCalled();
-    // });
-  
+
     it('should throw an error if the service fails to create the withdrawal request', async () => {
       const withdrawDto = {
         requestId: 'req123',
@@ -325,9 +291,9 @@ describe('AgentController', () => {
         agentId: 'agent123',
         coinType: 'BTC',
       };
-  
+
       jest.spyOn(service, 'createWithdrawRequest').mockRejectedValue(new Error('Service error'));
-  
+
       await expect(controller.createWithdrawRequest(withdrawDto)).rejects.toThrow('Service error');
       expect(service.createWithdrawRequest).toHaveBeenCalledWith(withdrawDto);
     });
@@ -342,42 +308,42 @@ describe('AgentController', () => {
         agentId: approveDto.agentId,
         status: DepositStatus.COMPLETED,
       });
-  
+
       jest.spyOn(service, 'approveWithdrawal').mockResolvedValue(approvedWithdrawal);
-  
+
       const result = await controller.approveWithdrawal(withdrawalId, approveDto);
       expect(result).toEqual(approvedWithdrawal);
       expect(service.approveWithdrawal).toHaveBeenCalledWith(withdrawalId, approveDto.agentId);
     });
-  
+
     it('should throw an error if the withdrawal request is not found', async () => {
       const withdrawalId = 'withdraw999';
       const approveDto = { agentId: 'agent123' };
-  
+
       jest.spyOn(service, 'approveWithdrawal').mockRejectedValue(new Error('Withdrawal request not found'));
-  
+
       await expect(controller.approveWithdrawal(withdrawalId, approveDto)).rejects.toThrow(
         'Withdrawal request not found',
       );
       expect(service.approveWithdrawal).toHaveBeenCalledWith(withdrawalId, approveDto.agentId);
     });
-  
+
     it('should throw an error if the agent is not found', async () => {
       const withdrawalId = 'withdraw123';
       const approveDto = { agentId: 'agent999' };
-  
+
       jest.spyOn(service, 'approveWithdrawal').mockRejectedValue(new Error('Agent not found'));
-  
+
       await expect(controller.approveWithdrawal(withdrawalId, approveDto)).rejects.toThrow('Agent not found');
       expect(service.approveWithdrawal).toHaveBeenCalledWith(withdrawalId, approveDto.agentId);
     });
-  
+
     it('should throw an error if the approval operation fails', async () => {
       const withdrawalId = 'withdraw123';
       const approveDto = { agentId: 'agent123' };
-  
+
       jest.spyOn(service, 'approveWithdrawal').mockRejectedValue(new Error('Approval failed'));
-  
+
       await expect(controller.approveWithdrawal(withdrawalId, approveDto)).rejects.toThrow('Approval failed');
       expect(service.approveWithdrawal).toHaveBeenCalledWith(withdrawalId, approveDto.agentId);
     });
@@ -394,31 +360,14 @@ describe('AgentController', () => {
       };
       const createdRequest = mockWithdrawRequest({ ...depositDto, status: DepositStatus.PENDING });
       const bestAgent = mockAgent({});
-  
-      jest.spyOn(service, 'createDepositRequest').mockResolvedValue([ bestAgent, createdRequest]);
-  
+
+      jest.spyOn(service, 'createDepositRequest').mockResolvedValue([bestAgent, createdRequest]);
+
       const result = await controller.createDepositRequest(depositDto);
       expect(result).toEqual([bestAgent, createdRequest]);
       expect(service.createDepositRequest).toHaveBeenCalledWith(depositDto);
     });
-  
-    // it('should throw an error if required fields are missing', async () => {
-    //   const depositDto = {
-    //     amount: 1000,
-    //     user: 'user123',
-    //     // Missing required fields like requestId, agentId, and coinType
-    //   } as any;
-  
-    //   jest.spyOn(service, 'createDepositRequest').mockImplementation(() => {
-    //     throw new Error('Validation error: Missing required fields');
-    //   });
-  
-    //   await expect(controller.createDepositRequest(depositDto)).rejects.toThrow(
-    //     'Validation error: Missing required fields',
-    //   );
-    //   expect(service.createDepositRequest).not.toHaveBeenCalled();
-    // });
-  
+
     it('should throw an error if the service fails to create the deposit request', async () => {
       const depositDto = {
         requestId: 'req123',
@@ -427,9 +376,9 @@ describe('AgentController', () => {
         agentId: 'agent123',
         coinType: 'BTC',
       };
-  
+
       jest.spyOn(service, 'createDepositRequest').mockRejectedValue(new Error('Service error'));
-  
+
       await expect(controller.createDepositRequest(depositDto)).rejects.toThrow('Service error');
       expect(service.createDepositRequest).toHaveBeenCalledWith(depositDto);
     });
@@ -444,42 +393,42 @@ describe('AgentController', () => {
         agentId: approveDto.agentId,
         status: DepositStatus.COMPLETED,
       });
-  
+
       jest.spyOn(service, 'approveDeposit').mockResolvedValue(approvedDeposit);
-  
+
       const result = await controller.approveDeposit(depositId, approveDto);
       expect(result).toEqual(approvedDeposit);
       expect(service.approveDeposit).toHaveBeenCalledWith(depositId, approveDto.agentId);
     });
-  
+
     it('should throw an error if the deposit request is not found', async () => {
       const depositId = 'deposit999';
       const approveDto = { agentId: 'agent123' };
-  
+
       jest.spyOn(service, 'approveDeposit').mockRejectedValue(new Error('Deposit request not found'));
-  
+
       await expect(controller.approveDeposit(depositId, approveDto)).rejects.toThrow(
         'Deposit request not found',
       );
       expect(service.approveDeposit).toHaveBeenCalledWith(depositId, approveDto.agentId);
     });
-  
+
     it('should throw an error if the agent is not found', async () => {
       const depositId = 'deposit123';
       const approveDto = { agentId: 'agent999' };
-  
+
       jest.spyOn(service, 'approveDeposit').mockRejectedValue(new Error('Agent not found'));
-  
+
       await expect(controller.approveDeposit(depositId, approveDto)).rejects.toThrow('Agent not found');
       expect(service.approveDeposit).toHaveBeenCalledWith(depositId, approveDto.agentId);
     });
-  
+
     it('should throw an error if the approval operation fails', async () => {
       const depositId = 'deposit123';
       const approveDto = { agentId: 'agent123' };
-  
+
       jest.spyOn(service, 'approveDeposit').mockRejectedValue(new Error('Approval failed'));
-  
+
       await expect(controller.approveDeposit(depositId, approveDto)).rejects.toThrow('Approval failed');
       expect(service.approveDeposit).toHaveBeenCalledWith(depositId, approveDto.agentId);
     });
@@ -494,46 +443,46 @@ describe('AgentController', () => {
         agentId: cancelDto.agentId,
         status: DepositStatus.CANCELLED,
       });
-  
+
       jest.spyOn(service, 'cancelDeposit').mockResolvedValue(canceledDeposit);
-  
+
       const result = await controller.cancelDeposit(depositId, cancelDto);
       expect(result).toEqual(canceledDeposit);
       expect(service.cancelDeposit).toHaveBeenCalledWith(depositId, cancelDto.agentId);
     });
-  
+
     it('should throw an error if the deposit request is not found', async () => {
       const depositId = 'deposit999';
       const cancelDto = { agentId: 'agent123' };
-  
+
       jest.spyOn(service, 'cancelDeposit').mockRejectedValue(new Error('Deposit request not found'));
-  
+
       await expect(controller.cancelDeposit(depositId, cancelDto)).rejects.toThrow(
         'Deposit request not found',
       );
       expect(service.cancelDeposit).toHaveBeenCalledWith(depositId, cancelDto.agentId);
     });
-  
+
     it('should throw an error if the agent is not found', async () => {
       const depositId = 'deposit123';
       const cancelDto = { agentId: 'agent999' };
-  
+
       jest.spyOn(service, 'cancelDeposit').mockRejectedValue(new Error('Agent not found'));
-  
+
       await expect(controller.cancelDeposit(depositId, cancelDto)).rejects.toThrow('Agent not found');
       expect(service.cancelDeposit).toHaveBeenCalledWith(depositId, cancelDto.agentId);
     });
-  
+
     it('should throw an error if the cancellation operation fails', async () => {
       const depositId = 'deposit123';
       const cancelDto = { agentId: 'agent123' };
-  
+
       jest.spyOn(service, 'cancelDeposit').mockRejectedValue(new Error('Cancellation failed'));
-  
+
       await expect(controller.cancelDeposit(depositId, cancelDto)).rejects.toThrow('Cancellation failed');
       expect(service.cancelDeposit).toHaveBeenCalledWith(depositId, cancelDto.agentId);
     });
-    
+
     describe('AgentController - Cancel Deposit', () => {
       it('should cancel a deposit request with a valid ID and agent ID', async () => {
         const depositId = 'deposit123';
@@ -543,42 +492,42 @@ describe('AgentController', () => {
           agentId: cancelDto.agentId,
           status: DepositStatus.CANCELLED,
         });
-    
+
         jest.spyOn(service, 'cancelDeposit').mockResolvedValue(canceledDeposit);
-    
+
         const result = await controller.cancelDeposit(depositId, cancelDto);
         expect(result).toEqual(canceledDeposit);
         expect(service.cancelDeposit).toHaveBeenCalledWith(depositId, cancelDto.agentId);
       });
-    
+
       it('should throw an error if the deposit request is not found', async () => {
         const depositId = 'deposit999';
         const cancelDto = { agentId: 'agent123' };
-    
+
         jest.spyOn(service, 'cancelDeposit').mockRejectedValue(new Error('Deposit request not found'));
-    
+
         await expect(controller.cancelDeposit(depositId, cancelDto)).rejects.toThrow(
           'Deposit request not found',
         );
         expect(service.cancelDeposit).toHaveBeenCalledWith(depositId, cancelDto.agentId);
       });
-    
+
       it('should throw an error if the agent is not found', async () => {
         const depositId = 'deposit123';
         const cancelDto = { agentId: 'agent999' };
-    
+
         jest.spyOn(service, 'cancelDeposit').mockRejectedValue(new Error('Agent not found'));
-    
+
         await expect(controller.cancelDeposit(depositId, cancelDto)).rejects.toThrow('Agent not found');
         expect(service.cancelDeposit).toHaveBeenCalledWith(depositId, cancelDto.agentId);
       });
-    
+
       it('should throw an error if the cancellation operation fails', async () => {
         const depositId = 'deposit123';
         const cancelDto = { agentId: 'agent123' };
-    
+
         jest.spyOn(service, 'cancelDeposit').mockRejectedValue(new Error('Cancellation failed'));
-    
+
         await expect(controller.cancelDeposit(depositId, cancelDto)).rejects.toThrow('Cancellation failed');
         expect(service.cancelDeposit).toHaveBeenCalledWith(depositId, cancelDto.agentId);
       });
@@ -590,30 +539,30 @@ describe('AgentController', () => {
       const agentId = 'agent123';
       const withdrawDto = { amount: 500 };
       const updatedAgent = mockAgent({ id: agentId, balance: 1500 });
-  
+
       jest.spyOn(service, 'agentWithdrawBalance').mockResolvedValue(updatedAgent);
-  
+
       const result = await controller.agentWithdrawBalance(agentId, withdrawDto);
       expect(result).toEqual(updatedAgent);
       expect(service.agentWithdrawBalance).toHaveBeenCalledWith(agentId, withdrawDto.amount);
     });
-  
+
     it('should throw an error if the agent is not found', async () => {
       const agentId = 'agent999';
       const withdrawDto = { amount: 500 };
-  
+
       jest.spyOn(service, 'agentWithdrawBalance').mockRejectedValue(new Error('Agent not found'));
-  
+
       await expect(controller.agentWithdrawBalance(agentId, withdrawDto)).rejects.toThrow('Agent not found');
       expect(service.agentWithdrawBalance).toHaveBeenCalledWith(agentId, withdrawDto.amount);
     });
-  
+
     it('should throw an error if the withdrawal operation fails', async () => {
       const agentId = 'agent123';
       const withdrawDto = { amount: 500 };
-  
+
       jest.spyOn(service, 'agentWithdrawBalance').mockRejectedValue(new Error('Withdrawal failed'));
-  
+
       await expect(controller.agentWithdrawBalance(agentId, withdrawDto)).rejects.toThrow('Withdrawal failed');
       expect(service.agentWithdrawBalance).toHaveBeenCalledWith(agentId, withdrawDto.amount);
     });
@@ -622,80 +571,47 @@ describe('AgentController', () => {
   describe('AgentController - General Error Handling', () => {
     it('should throw a NotFoundException if no agents are found', async () => {
       jest.spyOn(service, 'getAllAgents').mockResolvedValue([]);
-  
+
       await expect(controller.findAll()).rejects.toThrow('No agents found');
       expect(service.getAllAgents).toHaveBeenCalled();
     });
-  
+
     it('should throw a NotFoundException if an agent is not found by ID', async () => {
       const agentId = 'nonexistent-id';
-  
+
       jest.spyOn(service, 'getAgentById').mockResolvedValue(null);
-  
+
       await expect(controller.findOne(agentId)).rejects.toThrow(`Agent with ID '${agentId}' not found`);
       expect(service.getAgentById).toHaveBeenCalledWith(agentId);
     });
-  
+
     it('should throw a NotFoundException if account details are not found', async () => {
       const agentId = 'nonexistent-id';
-  
+
       jest.spyOn(service, 'getAgentAccountDetails').mockResolvedValue(null);
-  
+
       await expect(controller.getAccountDetails(agentId)).rejects.toThrow(
         `Account details for agent with ID '${agentId}' not found`,
       );
       expect(service.getAgentAccountDetails).toHaveBeenCalledWith(agentId);
     });
-  
-    // it('should throw a ValidationError if required fields are missing in createAgent', async () => {
-    //   const invalidCreateAgentDto = {
-    //     addr: '0x123',
-    //     coinType: 'SUI',
-    //     // Missing required fields like accountNumber, bank, and name
-    //   } as any;
-  
-    //   await expect(controller.create(invalidCreateAgentDto)).rejects.toThrow();
-    //   expect(service.createAgent).not.toHaveBeenCalled();
-    // });
-  
+
     it('should throw an error if the service fails unexpectedly', async () => {
       jest.spyOn(service, 'getAllAgents').mockRejectedValue(new Error('Unexpected service error'));
-  
+
       await expect(controller.findAll()).rejects.toThrow('Unexpected service error');
       expect(service.getAllAgents).toHaveBeenCalled();
     });
-  
+
     it('should throw a NotFoundException if agents by coin type are not found', async () => {
       const coinType = 'BTC';
-  
+
       jest.spyOn(service, 'findAgentsByType').mockResolvedValue([]);
-  
+
       await expect(controller.findByType(coinType)).rejects.toThrow(
         `Agents with type '${coinType}' not found`,
       );
       expect(service.findAgentsByType).toHaveBeenCalledWith(coinType);
     });
-  
-    // it('should throw a ValidationError if required fields are missing in createWithdrawRequest', async () => {
-    //   const invalidWithdrawDto = {
-    //     amount: 500,
-    //     user: 'user123',
-    //     // Missing required fields like requestId, agentId, and coinType
-    //   } as any;
-  
-    //   await expect(controller.createWithdrawRequest(invalidWithdrawDto)).rejects.toThrow();
-    //   expect(service.createWithdrawRequest).not.toHaveBeenCalled();
-    // });
-  
-    // it('should throw a ValidationError if required fields are missing in createDepositRequest', async () => {
-    //   const invalidDepositDto = {
-    //     amount: 1000,
-    //     user: 'user123',
-    //     // Missing required fields like requestId, agentId, and coinType
-    //   } as any;
-  
-    //   await expect(controller.createDepositRequest(invalidDepositDto)).rejects.toThrow();
-    //   expect(service.createDepositRequest).not.toHaveBeenCalled();
-    // });
   });
 });

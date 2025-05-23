@@ -19,13 +19,13 @@ const mockPrismaService = {
             findUnique: jest.fn(),
             update: jest.fn(),
             findMany: jest.fn(),
-          },
-          withdrawRequest: {
+        },
+        withdrawRequest: {
             create: jest.fn(),
             findUnique: jest.fn(),
             update: jest.fn(),
             findMany: jest.fn(),
-          }
+        }
     },
 };
 

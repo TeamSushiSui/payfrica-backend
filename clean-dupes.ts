@@ -2,7 +2,6 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  // 1) Find all transactionIds that appear more than once
   const groups = await prisma.transaction.groupBy({
     by: ["transactionId"],
     _count: { transactionId: true },
@@ -10,14 +9,12 @@ async function main() {
   });
 
   for (const g of groups) {
-    // 2) Fetch all records for this transactionId, ordered by `date`
     const recs = await prisma.transaction.findMany({
       where: { transactionId: g.transactionId },
-      orderBy: { date: "asc" },   // <— use `date`, not `requestTime`
+      orderBy: { date: "asc" },
       select: { id: true },
     });
 
-    // 3) Keep the first one, delete the rest
     const toDelete = recs.slice(1).map(r => r.id);
     if (toDelete.length) {
       await prisma.transaction.deleteMany({
