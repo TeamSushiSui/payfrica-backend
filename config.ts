@@ -10,9 +10,9 @@ export const CONFIG = {
 	DEFAULT_LIMIT: 50,
 	NETWORK: (process.env.NETWORK as Network) || 'testnet',
 	RPC_URL: (process.env.RPC_URL as string) || 'https://fullnode.testnet.sui.io',
-	PACKAGE_ID: "0x35fcdca2bd3d7b3a845ea1e5b614e727698da3af3cd64658ba8ace10fdb73a64",
-	PAYF_RES_ID: "0xac80865520f184941b43a6e98efc9af7c305f4a389773b2e80e659417baa85af",
-	PAYFRICA_ID: "0xd01adbc71f0cd1dd38d0f9f61e9846f12f2b39e7d5e779e6697b266ea78966e2"
+	PACKAGE_ID: "0x5f4babde03d2d69e507bf668ada801f462d8b87fffd9bce517b3b69e247b4c9f",
+	PAYF_RES_ID: "0xada62e7c4404c563686f9f7770f35c126a7e133c4c11eaf7db78cf6fa6fabbef",
+	PAYFRICA_ID: "0x9a903273f8df1f57360d311ce969fec5d31d22ed61e0f86ce672c25bd4780017"
 };
 
 const rpcUrl = getFullnodeUrl(CONFIG.NETWORK);
@@ -34,7 +34,7 @@ export async function makeUser(address: string) {
 		target: `${CONFIG.PACKAGE_ID}::payfrica::make_user`,
 		arguments: [
 			tx.object(CONFIG.PAYFRICA_ID),
-			tx.pure.address("0x299997c9cc660a99a12e0b9945d138adcca560facde681e06ed9e078b815962e"),
+			tx.pure.address(address),
 		],
 	});
 
@@ -53,10 +53,8 @@ export async function makeUser(address: string) {
 		});
 
 		if (objectChanges) {
-			// console.log('objectChanges', objectChanges);
 			
 		}
 	} catch (error) {
-		// console.log('error', error);
 	}
 }
