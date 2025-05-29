@@ -27,7 +27,7 @@ export class UsersService {
 
     await makeUser(address);
     return this.prisma.user.create({
-      data: { address: address }
+      data: { address: address, countryname: "Nigeria" }
     });
   }
 
