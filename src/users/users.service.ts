@@ -10,7 +10,7 @@ import { makeUser } from 'config';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
-
+  
   async findAll(): Promise<User[]> {
     return await this.prisma.user.findMany();
   }
