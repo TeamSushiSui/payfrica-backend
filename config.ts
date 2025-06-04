@@ -54,7 +54,9 @@ export async function makeUser(address: string) {
 		});
 
 		if (objectChanges) {
+			return objectChanges
 		}
 	} catch (error) {
+		return null
 	}
 }

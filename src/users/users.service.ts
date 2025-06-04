@@ -25,10 +25,12 @@ export class UsersService {
       return user;
     }
 
-    await makeUser(address);
-    return this.prisma.user.create({
+    const objectChanges = await makeUser(address);
+    if (objectChanges){
+      return this.prisma.user.create({
       data: { address: address, countryname: "Nigeria" }
     });
+    }
   }
 
   async updateUsername(address: string, newUsername: string): Promise<User> {
